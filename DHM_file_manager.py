@@ -1,10 +1,8 @@
 """
 DHM file manager
- Autor: Gernot Scheerer, team UMI, CNP-CHUV Lausanne
- gernot.scheerer@hotmail.de
+ Autor: tonreg, team UMI, CNP-CHUV Lausanne
  
  Version 01 - 28.03.2024
-
 
  This program is used to post-process data recorded during one experience with a LynceeTec DHM.
 
