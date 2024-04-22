@@ -1,8 +1,10 @@
 """
 DHM file manager
- Autor: tonreg, team UMI, CNP-CHUV Lausanne
+ Autor: Gernot Scheerer, team UMI, CNP-CHUV Lausanne
+ gernot.scheerer@hotmail.de
  
- Version 01 - 28.03.2024
+ Version 02 - 22.04.2024
+
 
  This program is used to post-process data recorded during one experience with a LynceeTec DHM.
 
@@ -13,13 +15,13 @@ DHM file manager
     - Supported input file formats:
       - "bin" - a series of binary file, where every file is a single image of a recording.
       - "bnr" - a binary file containing a sequence of images of a recording.
-      - "tif" or "tiff" - is a sequence of images in TIFF format of a recording.
-      - single "tif" files - a series of file in TIFF format, where every file is a single image of a recording.
+      - "tiff stack" - a TIFF stack containing a sequence of images of a recording.
+      - "single-image tiff files" - a series of files in TIFF format, where every file is a single image of a recording.
     - Supported output file formats:
       - "bin"
       - "bnr"
-      - "tif" or "tiff" sequence
-      - single "tif" files - a series of file in TIFF format, where every file is a single image of a recording.
+      - "tiff stack"
+      - "single tiff files"
 
  c) modify the header of all bin files of a choosen folder. Click button "Bin-file header mod" to access this function.
 """
@@ -42,6 +44,7 @@ from bnr2single_tiffs import bnr2tiffS
 from single_tiffs2tiff import tiffS2tiff
 from single_tiffs2bin import tiffS2bin
 from single_tiffs2bnr import tiffS2bnr
+from tiffs_or_tiffS import tiffs_or_tiffS
 
 import numpy
 from skimage.transform import resize
@@ -54,12 +57,14 @@ from modify_header import modify_header
 infilewithness=None
 showheaderwithness=None
 outform=None
+out_file_name=''
+out_file_folder=''
+out_file_path=''
 
 #info window
 with open('info.txt') as f:
     infotext=f.read()
 f.close()
-#infotext='DHM file manager - version 01 - 15.03.2024\n Autor: Gernot Scheerer, team UMI, CNP-CHUV Lausanne\n gernot.scheerer@hotmail.de\n\n This program is used to post-process data recorded during one experience with a LynceeTec DHM.\n\nThis program does:\n\na) Open images and sequences written by LynceeTec Koala, LynceeTec Possum, or FIJI.\n\nb) convert files between "LynceeTec" formats\n- Supported input file formats:\n-- "bin" - a series of binary file, where every file is a single image of a recording.\n-- "bnr" - a binary file containing a sequence of images of a recording.\n-- "tif" or "tiff" - is a sequence of images in TIFF format of a recording.\n-- single "tif" files - a series of file in TIFF format, where every file is a single image of a recording.\n- Supported output file formats:\n-- "bin"\n-- "bnr"\n-- "tif" or "tiff" sequence\n-- single "tif" files - a series of file in TIFF format, where every file is a single image of a recording.\n\nc) modify the header of all bin files of a choosen folder. Click button \"Bin-file header mod\" to access this function.'
 
 # First the window layout in 3 columns
 files_and_parameter = [
@@ -70,7 +75,7 @@ files_and_parameter = [
     ],
     [
         simgui.Text("Timestamp file:"),
-        simgui.In(size=(50, 1), enable_events=True, key="timefilepath"),
+        simgui.In(size=(50, 1), enable_events=True, key='timefilepath'),
         simgui.FileBrowse(),
     ],
     [
@@ -82,13 +87,17 @@ files_and_parameter = [
         simgui.Text("Output format:"),
         simgui.Checkbox("bin", enable_events=True, key='outformbin'),
         simgui.Checkbox("bnr", enable_events=True, key='outformbnr'),
-        simgui.Checkbox("tiff", enable_events=True, key='outformtif'),
-        simgui.Checkbox("single tiffs", enable_events=True, key='outformtifS'),
+        simgui.Checkbox("tiff stack", enable_events=True, key='outformtif'),
+        simgui.Checkbox("single-image tiff files", enable_events=True, key='outformtifS'),
     ],
     [
-         simgui.Text("Output file:"),
-         simgui.In(size=(50, 1), enable_events=True, key="outfilepath"),
-         simgui.FileBrowse(),
+         simgui.Text("Output file folder:"),
+         simgui.In(size=(50, 1), enable_events=True, key="outfilefolder"),
+         simgui.FolderBrowse(),simgui.Button(button_text='Same as input file',enable_events=True, key="outfolderbutton"),
+    ],
+    [
+         simgui.Text("Output file name:"),
+         simgui.In(size=(30, 1), enable_events=True, key="outfilename"),
     ],
     [
         simgui.Button("Start file conversion!", enable_events=True, key='startfileconv'),
@@ -150,7 +159,8 @@ while True:
                 modify_header(binfolder)
     #modify header of bin files - END
     
-#if tik one box, then set all others to false
+    #if tik one box, then set all others to false, suggest output file name,
+    #change outfile format if we tick another output format box
     if event == '682':
         if window['682'].get() == True:
             window['666'].update(value=False)
@@ -167,26 +177,43 @@ while True:
             window['outformtif'].update(value=False)
             window['outformtifS'].update(value=False)
             outform='.bin'
-            #change outfile format if we tick another output format box
-            window['convinf'].update(value='File conversion info: slecting input\nIf output format = bin, the output files will be created in a new folder \"outputfilename_Bin_files\"')
-            if values['outfilepath'] != "":
-                out_file_name, out_file_extension = os.path.splitext(values['outfilepath'])
-                if out_file_extension != outform:
-                    out_file_path=out_file_name+outform
-                    window['outfilepath'].update(value=out_file_path)
-        else: outform=None
+
+            window['outfilename'].update(disabled=True)
+            
+            out_file_name='0000X_phase.bin'
+            window['outfilename'].update(value=out_file_name)
+            
+            window['convinf'].update(value='File conversion info: selecting input\nOutput format = single-image bin files, The programme will add \"_Bin files\" to the choosen output folder.')
+
+        else:
+            outform=None
+            window['outfilename'].update(disabled=False)
     if event == 'outformbnr':
         if window['outformbnr'].get() == True:
             window['outformbin'].update(value=False)
             window['outformtif'].update(value=False)
             window['outformtifS'].update(value=False)
             outform='.bnr'
+            
+            window['outfilename'].update(disabled=False)
+            window['convinf'].update(value='File conversion info: selecting input\nOutput format = bnr (bin stack).')
+            
             #change outfile format if we tick another output format box
-            if values['outfilepath'] != "":
-                out_file_name, out_file_extension = os.path.splitext(values['outfilepath'])
-                if out_file_extension != outform:
-                    out_file_path=out_file_name+outform
-                    window['outfilepath'].update(value=out_file_path)
+            if values['outfilename'] != '':
+                out_file_name=values['outfilename']
+                alist=out_file_name.split('.')
+                
+                if len(alist) == 1:
+                    out_file_name=out_file_name+outform
+                else:
+                    namebase=''
+                    for k in range(len(alist)-2):
+                        namebase=namebase+alist[k]+'.'
+                    namebase=namebase+alist[len(alist)-2]
+                    out_file_name=namebase+outform
+                    
+                window['outfilename'].update(value=out_file_name)
+                
         else: outform=None
     if event == 'outformtif':
         if window['outformtif'].get() == True:
@@ -194,12 +221,26 @@ while True:
             window['outformbin'].update(value=False)
             window['outformtifS'].update(value=False)
             outform='.tif'
+            
+            window['outfilename'].update(disabled=False)
+            window['convinf'].update(value='File conversion info: selecting input\nOutput format = tiff stack.')
+            
             #change outfile format if we tick another output format box
-            if values['outfilepath'] != "":
-                out_file_name, out_file_extension = os.path.splitext(values['outfilepath'])
-                if out_file_extension != outform:
-                    out_file_path=out_file_name+outform
-                    window['outfilepath'].update(value=out_file_path)
+            if values['outfilename'] != '':
+                out_file_name=values['outfilename']
+                alist=out_file_name.split('.')
+                
+                if len(alist) == 1:
+                    out_file_name=out_file_name+outform
+                else:
+                    namebase=''
+                    for k in range(len(alist)-2):
+                        namebase=namebase+alist[k]+'.'
+                    namebase=namebase+alist[len(alist)-2]
+                    out_file_name=namebase+outform
+                    
+                window['outfilename'].update(value=out_file_name)
+                
         else: outform=None
     if event == 'outformtifS':
         if window['outformtifS'].get() == True:
@@ -207,9 +248,18 @@ while True:
             window['outformbin'].update(value=False)
             window['outformtif'].update(value=False)
             outform='.single_tiffs'
-            #change outfile format if we tick another output format box
-        else: outform=None
-                
+            
+            window['outfilename'].update(disabled=True)
+            
+            out_file_name='0000X_phase.tif'
+            window['outfilename'].update(value=out_file_name)
+            
+            window['convinf'].update(value='File conversion info: selecting input\nOutput format = single-image tiff files, The programme will add \"_tiff files\" to the choosen output folder.')
+
+        else:
+            outform=None
+            window['outfilename'].update(disabled=False)
+    
     #display input file info and image
     if values['infilepath'] != "" and showheaderwithness != values['infilepath']:
         showheaderwithness = values['infilepath']
@@ -316,172 +366,200 @@ while True:
             window['display'].update(in_file_image_path)
             os.remove(in_file_image_path)
     
-    #write output file path into 'outfilepath' if input file and output format are choosen
-    if values['infilepath'] != "" and values['outfilepath'] == "" and infilewithness != values['infilepath']:
-        in_file_name, in_file_extension = os.path.splitext(values['infilepath'])
-        
-        if window['outformbin'].get() == True or window['outformbnr'].get() == True or window['outformtif'].get() == True or window['outformtifS'].get() == True:
-            out_file_path=in_file_name+outform
-            print('New output file name: ', out_file_path)
-            window['outfilepath'].update(value=out_file_path)
+    #suggest output file name if input file and output format are choosen
+    if values['infilepath'] != "" and infilewithness != values['infilepath']:
+        if window['outformbnr'].get() == True or window['outformtif'].get() == True:
+            
             infilewithness = values['infilepath']
             
+            alist=os.path.basename(values['infilepath']).split('.')
+            namebase=''
+            for k in range(len(alist)-1):
+                namebase=namebase+alist[k]
+            out_file_name=namebase+outform
+            
+            window['outfilename'].update(value=out_file_name) 
+            
+    if event == "outfolderbutton":
+        window['outfilefolder'].update(value=os.path.dirname(values['infilepath']))
+       
     #start main program = file conversion
     if event == 'startfileconv':
         print('\nStart file conversion\n -> Check input and output parameters:\n')
         
         #check if all files and parameter are choosen correctly
+        
         #first check if input file is selected
         if values['infilepath'] == "": 
-            print(' Error: No input file selected')
+            print('Error: No input file selected')
             new_in_file=simgui.popup_get_file('Please select an input file:',  title="Error: No input file selected.")
             window['infilepath'].update(value=new_in_file)
             print (" Input file selected: ", values['infilepath'])
         else:
-            print (" Input file selected: ", values['infilepath'])
-            #now we check the input file extension
-            file_name, in_file_extension = os.path.splitext(values['infilepath'])
-            if in_file_extension != ".bin" and in_file_extension !=".bnr" and in_file_extension !=".tif":
-                print("  Error: Wrong input file format")
-                new_in_file=simgui.popup_get_file('Please select another input file:',  title="Error: Wrong input file format.")
-                window['infilepath'].update(value=new_in_file)
-                print('  New input file selected: ', new_in_file)
+            
+            if os.path.isfile(values['infilepath']) != True:
+                print('Error: Input file does not exist.')
+                simgui.popup_auto_close('Error: Input file does not exist.')
             else:
-                print("  Correct input file format: ", in_file_extension)
-                
-                #if in_file is tiff, check if its a file of a series of "single tiffs"
-                if in_file_extension == '.tif':
-                    
-                    tiffcheck=simgui.popup_yes_no('You have chosen a tiff file as input.\n\nIs it a tiff-sequence or a file from a\nseries of "single tiffs?\n\n  Sequence  Singles', title='TiffS?')
-
-                    if tiffcheck!=None:
-                        if tiffcheck=='No':
-                            in_file_extension='.single_tiffs'
-                
-                #now check if timestamp file is choosen
-                if values['timefilepath'] == "": 
-                    print('   Error: No timestamp file selected')
-                    new_in_file=simgui.popup_get_file('Please select a timestamp file:',  title="Error: No timestamp file selected.")
-                    window['timefilepath'].update(value=new_in_file)
-                    print("   Timestamp file selected: ", new_in_file)
+                print (" Input file selected: ", values['infilepath'])
+            
+                #now we check the input file extension
+                file_name, in_file_extension = os.path.splitext(values['infilepath'])
+                if in_file_extension != ".bin" and in_file_extension !=".bnr" and in_file_extension !=".tif":
+                    print("Error: Wrong input file format")
+                    new_in_file=simgui.popup_get_file('Please select another input file:',  title="Error: Wrong input file format.")
+                    window['infilepath'].update(value=new_in_file)
+                    print('New input file selected: ', new_in_file)
                 else:
-                    print("   Timestamp file selected: ", values['timefilepath'])
-                    #now check if wavelength is selected
-                    if window['682'].get() == False and window['666'].get() == False:
-                        simgui.popup_auto_close('Error: No wavelength selected.')
-                    else:
-                        #nowcheck  if output format selected
-                        if window['outformbin'].get() == False and window['outformbnr'].get() == False and window['outformtif'].get() == False and window['outformtifS'].get() == False:
-                            simgui.popup_auto_close('Error: No output file format selected.')
+                    print("Correct input file format: ", in_file_extension)
+    
+                    #if input file is tiff, ask user if its a tiff stack file or a series of single-image tiff files
+                    (tiff_go_on,in_file_extension)=tiffs_or_tiffS(in_file_extension)
+                    
+                    if tiff_go_on == True:
+    
+                        #now check if timestamp file is choosen
+                        if values['timefilepath'] == '':
+                            print('Error: No timestamp file selected')
+                            new_in_file=simgui.popup_get_file('Please select a timestamp file:',  title="Error: No timestamp file selected.")
+                            window['timefilepath'].update(value=new_in_file)
+                            print("Timestamp file selected:", new_in_file)
                         else:
-                            #now check if output file is selected
-                            if values['outfilepath'] == "": 
-                                print('    Error: No output file selected')
-                                new_out_file=simgui.popup_get_file('Please select an output file:',  title="Error: No output file selected.")
-                                window['outfilepath'].update(value=new_out_file)
-                                print ("    Output file selected: ", new_out_file)
+                            print("Timestamp file selected:", values['timefilepath'])
+                            #now check if wavelength is selected
+                            if window['682'].get() == False and window['666'].get() == False:
+                                simgui.popup_auto_close('Error: No wavelength selected.')
                             else:
-                                print ("    Output file selected: ", values['outfilepath'])
-                                #get output format and check if output and input format are different                                
-                                if window['outformbin'].get() == True:
-                                    outform='.bin'
-                                elif window['outformbnr'].get() == True:
-                                    outform='.bnr'
-                                elif window['outformtif'].get() == True:
-                                    outform='.tif'
-                                elif window['outformtifS'].get() == True:
-                                    outform='.single_tiffs'
-                                if in_file_extension == outform:
-                                    print('     Error: Same input and output format')
-                                    simgui.popup_auto_close('Error: Identic input and output format. Please chose another output format!')
+                                #nowcheck if output format selected
+                                if window['outformbin'].get() == False and window['outformbnr'].get() == False and window['outformtif'].get() == False and window['outformtifS'].get() == False:
+                                    simgui.popup_auto_close('Error: No output file format selected.')
                                 else:
-                                    if in_file_extension=='.bin' and outform=='.bnr':
-                                        print('bin to bnr')
-                                        window['convinf'].update(value='File conversion info: \nconversion bin to bnr\n\t - IN PROGRESS -')
-                                        #funtion bin to bnr:
-                                        bin2bnr(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion bin to bnr\n\t - DONE -')
                                     
-                                    elif in_file_extension=='.bin' and outform=='.tif':
-                                        print('bin to tif')
-                                        window['convinf'].update(value='File conversion info: \nconversion bin to tif\n\t - IN PROGRESS -')
-                                        #funtion bin to tif:
-                                        bin2tif(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion bin to tif\n\t - DONE -')
-                                    
-                                    elif in_file_extension=='.bnr' and outform=='.tif':
-                                        print('bnr to tif')
-                                        window['convinf'].update(value='File conversion info: \nconversion bnr to tif\n\t - IN PROGRESS -')
-                                        #funtion bnr to tif
-                                        bnr2tif(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion bnr to tif\n\t - DONE -')
-                                    
-                                    elif in_file_extension=='.bnr' and outform=='.bin':
-                                        print('bnr to bin')
-                                        window['convinf'].update(value='File conversion info: \nconversion bnr to bin\n\t - IN PROGRESS -')
-                                        #funtion bnr to bin
-                                        bnr2bin(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion bnr to bin\n\t - DONE -')
-                                   
-                                    elif in_file_extension=='.tif' and outform=='.bin':
-                                        print('tif to bin')
-                                        window['convinf'].update(value='File conversion info: \nconversion tif to bin\n\t - IN PROGRESS -')
-                                        #funtion tif to bin
-                                        tif2bin(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion tif to bin\n\t - DONE -')
-                                    
-                                    elif in_file_extension=='.tif' and outform=='.bnr':
-                                        print('tif to bnr')
-                                        window['convinf'].update(value='File conversion info: \nconversion tif to bnr\n\t - IN PROGRESS -')
-                                        #funtion tif to bnr
-                                        tif2bnr(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion tif to bnr\n\t - DONE -')
+                                    #now check if output file is selected
+                                    if values['outfilefolder'] == '' or values['outfilename'] == '':
+                                        print('Error: No output file selected')
+                                        simgui.popup_auto_close('Error: No output file selected.')
+                                    else:
+                                        out_file_path=values['outfilefolder']+'/'+values['outfilename']
+                                        print ("Output file selected:", out_file_path)
+
+                                        #get output format and check if output and input format are different                                
+                                        if window['outformbin'].get() == True:
+                                            outform='.bin'
+                                        elif window['outformbnr'].get() == True:
+                                            outform='.bnr'
+                                        elif window['outformtif'].get() == True:
+                                            outform='.tif'
+                                        elif window['outformtifS'].get() == True:
+                                            outform='.single_tiffs'
                                         
-                                    elif in_file_extension=='.tif' and outform=='.single_tiffs':
-                                        print('tif to single tiffs')
-                                        window['convinf'].update(value='File conversion info: \nconversion tif to single tiffs\n\t - IN PROGRESS -')
-                                        #funtion tif to single tiffs
-                                        tif2tiffS(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion tif to single tiffs\n\t - DONE -')
-                                        
-                                    elif in_file_extension=='.bin' and outform=='.single_tiffs':
-                                        print('bin to single tiffs')
-                                        window['convinf'].update(value='File conversion info: \nconversion bin files to single tiffs\n\t - IN PROGRESS -')
-                                        #funtion bin to single tiffs
-                                        bin2tiffS(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion bin files to single tiffs\n\t - DONE -')
-                                
-                                    elif in_file_extension=='.bnr' and outform=='.single_tiffs':
-                                        print('bnr to single tiffs')
-                                        window['convinf'].update(value='File conversion info: \nconversion bnr file to single tiffs\n\t - IN PROGRESS -')
-                                        #funtion bnr to single tiffs
-                                        bnr2tiffS(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion bnr file to single tiffs\n\t - DONE -')
-                                        
-                                    elif in_file_extension=='.single_tiffs' and outform=='.tif':
-                                        print('single tiffs to tiff')
-                                        window['convinf'].update(value='File conversion info: \nconversion single tiffs to tiff\n\t - IN PROGRESS -')
-                                        #funtion single tiffs to tiff
-                                        tiffS2tiff(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion single tiffs to tiff\n\t - DONE -')
-                             
-                                    elif in_file_extension=='.single_tiffs' and outform=='.bin':
-                                        print('single tiffs to  bin')
-                                        window['convinf'].update(value='File conversion info: \nconversion single tiffs to bin\n\t - IN PROGRESS -')
-                                        #funtion single tiffs to tiff
-                                        tiffS2bin(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion single tiffs to bin\n\t - DONE -')
-
-                                    elif in_file_extension=='.single_tiffs' and outform=='.bnr':
-                                        print('single tiffs to  bnr')
-                                        window['convinf'].update(value='File conversion info: \nconversion single tiffs to bnr\n\t - IN PROGRESS -')
-                                        #funtion single tiffs to tiff
-                                        tiffS2bnr(values['infilepath'],values['timefilepath'],wavelength,values['outfilepath'])
-                                        window['convinf'].update(value='File conversion info: \nconversion single tiffs to bnr\n\t - DONE -')
-
-
-
-
-
-
+                                        #now checkt if in- and output files are different
+                                        if values['infilepath'] == out_file_path:
+                                            print('Error: Identic input and output files')
+                                            simgui.popup_auto_close('Error: Identic input and output files!')
+                                        else:
+                                            #now checkt if in- and output formats are different
+                                            if in_file_extension == outform:
+                                                print('Error: Same input and output format')
+                                                simgui.popup_auto_close('Error: Identic input and output format!')
+                                            else:
+                                                #now checkt if output file exists already (for bnr and tiff sequence file)
+                                                checkit=False
+                                                if outform == '.bnr' or outform == '.tif':
+        
+                                                    if os.path.isfile(out_file_path)==True:
+                                                        print('/!\\ Output file exits already!')
+                                                        checkit=simgui.popup_ok_cancel("Output file exits already!\n\n- Press Ok to proceed.\n\n-Press Cancel to stop.\n ",  title="Output file exits already!")
+                                                        checkit=False
+                                                    else:
+                                                        checkit=True
+                                                else:
+                                                    checkit=True
+        
+                                                if checkit == True:
+                                                
+                                                    if in_file_extension=='.bin' and outform=='.bnr':
+                                                        print('bin to bnr')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bin to bnr\n\t - IN PROGRESS -')
+                                                        #funtion bin to bnr:
+                                                        bin2bnr(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bin to bnr\n\t - DONE -')
+                                                    
+                                                    elif in_file_extension=='.bin' and outform=='.tif':
+                                                        print('bin to tif')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bin to TIFF stack\n\t - IN PROGRESS -')
+                                                        #funtion bin to tif:
+                                                        bin2tif(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bin to TIFF stack\n\t - DONE -')
+                                                    
+                                                    elif in_file_extension=='.bnr' and outform=='.tif':
+                                                        print('bnr to tif')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bnr to TIFF stack\n\t - IN PROGRESS -')
+                                                        #funtion bnr to tif
+                                                        bnr2tif(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bnr to TIFF stack\n\t - DONE -')
+                                                    
+                                                    elif in_file_extension=='.bnr' and outform=='.bin':
+                                                        print('bnr to bin')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bnr to bin\n\t - IN PROGRESS -')
+                                                        #funtion bnr to bin
+                                                        bnr2bin(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bnr to bin\n\t - DONE -')
+                                                   
+                                                    elif in_file_extension=='.tif' and outform=='.bin':
+                                                        print('tif to bin')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of TIFF stack to bin\n\t - IN PROGRESS -')
+                                                        #funtion tif to bin
+                                                        tif2bin(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of TIFF stack to bin\n\t - DONE -')
+                                                    
+                                                    elif in_file_extension=='.tif' and outform=='.bnr':
+                                                        print('tif to bnr')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of TIFF stack to bnr\n\t - IN PROGRESS -')
+                                                        #funtion tif to bnr
+                                                        tif2bnr(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of TIFF stack to bnr\n\t - DONE -')
+                                                        
+                                                    elif in_file_extension=='.tif' and outform=='.single_tiffs':
+                                                        print('tif to single tiffs')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of TIFF stack to single-image TIFF files\n\t - IN PROGRESS -')
+                                                        #funtion tif to single tiffs
+                                                        tif2tiffS(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of TIFF stack to single-image TIFF files\n\t - DONE -')
+                                                        
+                                                    elif in_file_extension=='.bin' and outform=='.single_tiffs':
+                                                        print('bin to single tiffs')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bin files to single-image TIFF files\n\t - IN PROGRESS -')
+                                                        #funtion bin to single tiffs
+                                                        bin2tiffS(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bin files to single-image TIFF files\n\t - DONE -')
+                                                
+                                                    elif in_file_extension=='.bnr' and outform=='.single_tiffs':
+                                                        print('bnr to single tiffs')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bnr file to ssingle-image TIFF files\n\t - IN PROGRESS -')
+                                                        #funtion bnr to single tiffs
+                                                        bnr2tiffS(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of bnr file to single-image TIFF files\n\t - DONE -')
+                                                        
+                                                    elif in_file_extension=='.single_tiffs' and outform=='.tif':
+                                                        print('single tiffs to tiff')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of single-image TIFF files to TIFF stack\n\t - IN PROGRESS -')
+                                                        #funtion single tiffs to tiff
+                                                        tiffS2tiff(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of single-image TIFF files to TIFF stack\n\t - DONE -')
+                                             
+                                                    elif in_file_extension=='.single_tiffs' and outform=='.bin':
+                                                        print('single tiffs to  bin')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of single-image TIFF files to bin\n\t - IN PROGRESS -')
+                                                        #funtion single tiffs to tiff
+                                                        tiffS2bin(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of single-image TIFF files to bin\n\t - DONE -')
+                
+                                                    elif in_file_extension=='.single_tiffs' and outform=='.bnr':
+                                                        print('single tiffs to  bnr')
+                                                        window['convinf'].update(value='File conversion info: \nconversion of single-image TIFF files to bnr\n\t - IN PROGRESS -')
+                                                        #funtion single tiffs to tiff
+                                                        tiffS2bnr(values['infilepath'],values['timefilepath'],wavelength,out_file_path)
+                                                        window['convinf'].update(value='File conversion info: \nconversion of single-image TIFF files to bnr\n\t - DONE -')
+                                                                    
 window.close()
