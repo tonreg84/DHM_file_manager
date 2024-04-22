@@ -91,9 +91,9 @@ def modify_header(binfolder):
     timestampsfile=simgui.popup_get_file('Please select a timestamps file:',  title="Get timestamps file")
     if timestampsfile!=None:
         if timestampsfile=='':
-            simgui.popup_auto_close('Error: No file selected.')
+            simgui.popup_auto_close('Error: No timestamps file selected.')
         elif os.path.isfile(timestampsfile)==False:
-                simgui.popup_auto_close('Error: This file doesn\'t exist.')
+                simgui.popup_auto_close('Error: The file doesn\'t exist.')
         else: 
             file_name, file_extension = os.path.splitext(timestampsfile)
             if file_extension!='.txt':
