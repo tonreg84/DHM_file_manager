@@ -1,27 +1,29 @@
 """
 DHM file manager
- Autor: tonreg, team UMI, CNP-CHUV Lausanne
+Autor: tonreg, team UMI, CNP-CHUV Lausanne
  
- Version 02 - 22.04.2024
+Version 03 - 01.05.2024
 
- This program is used to post-process data recorded during one experience with a LynceeTec DHM.
+This program is used to post-process data recorded during one experience with a LynceeTec DHM.
 
- This program does:
- a) open image files written by LynceeTec Koala, LynceeTec Possum, or FIJI and shows the header information.
+This program does:
+a) open "bin" and "bnr" image files written by LynceeTec Koala or LynceeTec Possum, aw well as TIFF files, and shows the header information for "bin" and "bnr" files.
 
- b) convert files between "LynceeTec" formats
-    - Supported input file formats:
-      - "bin" - a series of binary file, where every file is a single image of a recording.
-      - "bnr" - a binary file containing a sequence of images of a recording.
-      - "tiff stack" - a TIFF stack containing a sequence of images of a recording.
-      - "single-image tiff files" - a series of files in TIFF format, where every file is a single image of a recording.
-    - Supported output file formats:
-      - "bin"
-      - "bnr"
-      - "tiff stack"
-      - "single tiff files"
+b) convert files between "LynceeTec" formats
+   - Supported input file formats:
+     - "bin" - a series of binary file, where every file is a single image of a DHM recording.
+     - "bnr" - a binary file containing a sequence of images of a DHM recording.
+     - "tiff stack" - a TIFF file containing a sequence of images of a DHM recording.
+     - "single-image tiff files" - a series of TIFF files, where every file is a single image of a DHM recording.
+   - Supported output file formats:
+     - "bin"
+     - "bnr"
+     - "tiff stack"
+     - "single-image tiff files"
+     
+c) modify the header of all bin files of a choosen folder. Click button "Bin-file header mod" to access this function.
 
- c) modify the header of all bin files of a choosen folder. Click button "Bin-file header mod" to access this function.
+d) modify the header of a bnr file. Click button "Bnr-file header mod" to access this function. 
 """
 
 import os
@@ -49,7 +51,8 @@ from skimage.transform import resize
 
 import matplotlib.image
 
-from modify_header import modify_header
+from modify_header import modify_bin_header
+from modify_header import modify_bnr_header
 
 #some control variables:
 infilewithness=None
@@ -90,7 +93,7 @@ files_and_parameter = [
     ],
     [
          simgui.Text("Output file folder:"),
-         simgui.In(size=(50, 1), enable_events=True, key="outfilefolder"),
+         simgui.In(size=(30, 1), enable_events=True, key="outfilefolder"),
          simgui.FolderBrowse(),simgui.Button(button_text='Same as input file',enable_events=True, key="outfolderbutton"),
     ],
     [
@@ -106,7 +109,8 @@ files_and_parameter = [
     ],
     [
         simgui.Button(button_text='Bin-file header mod',enable_events=True, key="bin_head_mod"),
-        simgui.Text("                                                                                 "),
+        simgui.Button(button_text='Bnr-file header mod',enable_events=True, key="bnr_head_mod"),
+        simgui.Text("                                                     "),
         simgui.Button(button_text='Info',enable_events=True, key="infobutton"),
     ],
 ]
@@ -147,15 +151,28 @@ while True:
     
     #modify header of bin files - START
     if event == 'bin_head_mod':
-        binfolder=simgui.popup_get_folder('Please select a folder with bin files:',  title="Chose bin folder.")
+        binfolder=simgui.popup_get_folder('Please select a folder with bin files:',  title="Chose bin folder")
         if binfolder!=None:
             if binfolder=='':
                 simgui.popup_auto_close('Error: No folder selected.')
             elif os.path.isdir(binfolder)==False:
                 simgui.popup_auto_close('Error: This folder doesn\'t exist.')
             else: 
-                modify_header(binfolder)
+                modify_bin_header(binfolder)
     #modify header of bin files - END
+    
+    #modify header of bnr files - START
+    if event == 'bnr_head_mod':
+        bnrfile=simgui.popup_get_file('Please select a bnr file:',  title="Chose bnr file")
+        print(bnrfile)
+        if bnrfile!=None:
+            if bnrfile=='':
+                simgui.popup_auto_close('Error: No file selected.')
+            elif os.path.isfile(bnrfile)==False:
+                simgui.popup_auto_close('Error: This file doesn\'t exist.')
+            else: 
+                modify_bnr_header(bnrfile)
+    #modify header of bnr files - END
     
     #if tik one box, then set all others to false, suggest output file name,
     #change outfile format if we tick another output format box
