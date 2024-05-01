@@ -1,16 +1,17 @@
-def modify_header(binfolder):
-    
-    import PySimpleGUI as simgui
-    import os
-    import binkoala
-    import numpy
-    
-    def is_float(string):
-        try:
-            float(string)
-            return True
-        except ValueError:
+import PySimpleGUI as simgui
+import os
+import binkoala
+import numpy
+import struct
+
+def is_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
             return False
+
+def modify_bin_header(binfolder):
     
     #get header info and update window
     in_file=binfolder+'/00000_phase.bin'
@@ -206,7 +207,185 @@ def modify_header(binfolder):
                             binkoala.write_mat_bin(file_path, phase_map, w, h, pz, hconv, uc)
 
                         hm_win_check=False
-                        
+                        simgui.auto_close('Header mofification done.')
                 header_mod_win.close()  
+                
+def modify_bnr_header(bnrfile):
+    
+    #get data from bnr file
+    fileID = open(bnrfile, 'rb')
+    nImages = numpy.fromfile(fileID, dtype="i4", count=1)
+    nImages = nImages[0]
+    w = numpy.fromfile(fileID, dtype="i4", count=1)
+    w_in=w[0]
+    h = numpy.fromfile(fileID, dtype="i4", count=1)
+    h_in=h[0]
+    pz = numpy.fromfile(fileID, dtype="f4", count=1)
+    pz_in=pz[0]
+    wavelength = numpy.fromfile(fileID, dtype="f4", count=1)
+    wave_in=wavelength[0]
+    n_1 = numpy.fromfile(fileID, dtype="f4", count=1)
+    n_1_in=n_1[0]
+    n_2 = numpy.fromfile(fileID, dtype="f4", count=1)
+    n_2_in=n_2[0]
+    fileID.close
+    
+    HMLayout = [
+        [simgui.Text('File name: '+os.path.basename(bnrfile), font=('Arial Bold', 14)),
+        ],
+        [simgui.Text("Which elements of the header do you want to change?", font=('Arial Bold', 14)),
+        ],
+        [simgui.Text("                              ", font=('Arial Bold', 12)),
+         ],
+        [simgui.Text("                              ", font=('Arial Bold', 12)),
+         simgui.Text("Current header", font=('Arial Bold', 12)),simgui.Text("       ", font=('Arial Bold', 12)),
+         simgui.Text("Replace with", font=('Arial Bold', 12)),
+        ],
+        [simgui.Text("Image width          ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="w_in", default_text=w_in),simgui.Text("      ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="w_out"),
+        ],
+        [simgui.Text("Image hight         ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="h_in", default_text=h_in),simgui.Text("      ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="h_out"),
+        ],
+        [simgui.Text("Pixel size            ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="pz_in", default_text=pz_in),simgui.Text("      ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="pz_out"),
+        ],
+        [simgui.Text("Wavelength", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="wave_in", default_text=wave_in),simgui.Text("      ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="wave_out"),
+        ],
+        [simgui.Text("n_1            ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="n_1_in", default_text=n_1_in),simgui.Text("      ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="n_1_out"),
+        ],
+        [simgui.Text("n_2            ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="n_2_in", default_text=n_2_in),simgui.Text("      ", font=('Arial Bold', 12)),
+         simgui.In(size=(15, 1), enable_events=True, key="n_2_out"),
+         ],
+        [simgui.Button(button_text='Check input', enable_events=True, key="check-button"),
+          simgui.Button(button_text='Reset input', enable_events=True, key="reset-button"),
+          ],
+        [simgui.Button(button_text='Start header modification', disabled=True, enable_events=True, key="start-button"),
+          simgui.Text("                                  ", font=('Arial Bold', 12)),
+          simgui.Button(button_text='Cancel', enable_events=True, key="cancel-button"),
+          ],
+        ]
+    
+    header_mod_win = simgui.Window('Bnr-file header modification', HMLayout, size=(500, 350))
+    
+    hm_win_check=True
+    while hm_win_check==True:
+        event, values = header_mod_win.read()
+
+        if event == simgui.WIN_CLOSED:
+            simgui.popup_auto_close('No header modification!')
+            hm_win_check=False
+        
+        if event == 'cancel-button':
+            simgui.popup_auto_close('No header modification!')
+            hm_win_check=False
+            
+        if event == 'check-button':
+            
+            w_out=values['w_out']
+            if w_out=='':
+                w_out=w_in
+                header_mod_win['w_out'].update(value=w_in)
+            else:
+                if w_out.isdigit()==False:
+                    simgui.popup_auto_close('Image width must be a positive integer!')
+                    header_mod_win['w_out'].update(value='')
+                else:
+                    h_out=values['h_out']
+                    if h_out=='':
+                        h_out=h_in
+                        header_mod_win['h_out'].update(value=h_in)
+                    else:
+                        if h_out.isdigit()==False:
+                            simgui.popup_auto_close('Image height must be a positive integer!')
+                            header_mod_win['h_out'].update(value='')
+                        else:
+                            pz_out=values['pz_out']
+                            if pz_out=='':
+                                pz_out=pz_in
+                                header_mod_win['pz_out'].update(value=pz_in)
+                            else:
+                                if is_float(pz_out)==False:
+                                    simgui.popup_auto_close('Pixel size must be a floating point number!')
+                                    header_mod_win['pz_out'].update(value='')
+                                else:
+                                    wave_out=values['wave_out']
+                                    if wave_out=='':
+                                        wave_out=wave_in
+                                        header_mod_win['wave_out'].update(value=wave_in)
+                                    else:
+                                        if is_float(wave_out)==False:
+                                            simgui.popup_auto_close('Wavelength must be a floating point number!')
+                                            header_mod_win['wave_out'].update(value='')
+                                        else:
+                                            n_1_out=values['n_1_out']
+                                            if n_1_out=='':
+                                                n_1_out=n_1_in
+                                                header_mod_win['n_1_out'].update(value=n_1_in)
+                                            else:
+                                                if is_float(n_1_out)==False:
+                                                    simgui.popup_auto_close('n_1 must be a floating point number!')
+                                                    header_mod_win['n_1_out'].update(value='')
+                                                else:
+                                                    n_2_out=values['n_2_out']
+                                                    if n_2_out=='':
+                                                        n_2_out=n_2_in
+                                                        header_mod_win['n_2_out'].update(value=n_2_in)
+                                                    else:
+                                                        if is_float(n_2_out)==False:
+                                                            simgui.popup_auto_close('n_2 must be a floating point number!')
+                                                            header_mod_win['n_2_out'].update(value='')
+                                                        else:
+                                                            simgui.popup_auto_close('Input ok!')
+                                                            header_mod_win['w_out'].update(disabled=True)
+                                                            header_mod_win['h_out'].update(disabled=True)
+                                                            header_mod_win['pz_out'].update(disabled=True)
+                                                            header_mod_win['wave_out'].update(disabled=True)
+                                                            header_mod_win['n_1_out'].update(disabled=True)
+                                                            header_mod_win['n_2_out'].update(disabled=True)
+                                                            
+                                                            header_mod_win['start-button'].update(disabled=False)
+                                             
+        if event == 'reset-button':
+            header_mod_win['start-button'].update(disabled=True)
+            header_mod_win['w_out'].update(disabled=False)
+            header_mod_win['h_out'].update(disabled=False)
+            header_mod_win['pz_out'].update(disabled=False)
+            header_mod_win['wave_out'].update(disabled=False)
+            header_mod_win['n_1_out'].update(disabled=False)
+            header_mod_win['n_2_out'].update(disabled=False)
+            
+        if event == 'start-button':
+                                    
+            w=int(w_out)
+            h=int(h_out)
+            pz=float(pz_out)
+            wave=float(wave_out)
+            n_1=float(n_1_out)
+            n_2=float(n_2_out)
+            
+            x=struct.pack('iii', nImages, w, h)
+            y=struct.pack('ffff', pz, wave, n_1, n_2)
+            
+            with open(bnrfile, 'rb+') as fileID:
+                fileID.seek(0)
+                fileID.write(x)
+                fileID.write(y)
+            
+            fileID.close()
+                
+            simgui.popup_auto_close('Header mofification done.')
+            
+            hm_win_check=False
+            
+    header_mod_win.close()  
                 
                         
