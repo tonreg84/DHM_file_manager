@@ -1,23 +1,25 @@
 DHM file manager
- Autor: tonreg, team UMI, CNP-CHUV Lausanne
+Autor: tonreg, team UMI, CNP-CHUV Lausanne
 
- Version 02 - 22.04.2024
+Version 03 - 01.05.2024
 
- This program is used to post-process data recorded during one experience with a LynceeTec DHM.
+This program is used to post-process data recorded during one experience with a LynceeTec DHM.
 
- This program does:
- a) open image files written by LynceeTec Koala, LynceeTec Possum, or FIJI and shows the header information.
+This program does:
+a) open "bin" and "bnr" image files written by LynceeTec Koala or LynceeTec Possum, aw well as TIFF files, and shows the header information for "bin" and "bnr" files.
 
- b) convert files between "LynceeTec" formats
-    - Supported input file formats:
-      - "bin" - a series of binary file, where every file is a single image of a recording.
-      - "bnr" - a binary file containing a sequence of images of a recording.
-      - "tiff stack" - a TIFF stack containing a sequence of images of a recording.
-      - "single-image tiff files" - a series of files in TIFF format, where every file is a single image of a recording.
-    - Supported output file formats:
-      - "bin"
-      - "bnr"
-      - "tiff stack"
-      - "single tiff files"
+b) convert files between "LynceeTec" formats
+   - Supported input file formats:
+     - "bin" - a series of binary file, where every file is a single image of a DHM recording.
+     - "bnr" - a binary file containing a sequence of images of a DHM recording.
+     - "tiff stack" - a TIFF file containing a sequence of images of a DHM recording.
+     - "single-image tiff files" - a series of TIFF files, where every file is a single image of a DHM recording.
+   - Supported output file formats:
+     - "bin"
+     - "bnr"
+     - "tiff stack"
+     - "single-image tiff files"
+     
+c) modify the header of all bin files of a choosen folder. Click button "Bin-file header mod" to access this function.
 
- c) modify the header of all bin files of a choosen folder. Click button "Bin-file header mod" to access this function.
+d) modify the header of a bnr file. Click button "Bnr-file header mod" to access this function.
