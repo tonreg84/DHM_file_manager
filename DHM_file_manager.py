@@ -47,9 +47,31 @@ from single_tiffs2bnr import tiffS2bnr
 from tiffs_or_tiffS import tiffs_or_tiffS
 
 import numpy
-from skimage.transform import resize
 
-import matplotlib.image
+#this one is for displaying the image
+def array_to_bin_image(data_array,dim1,dim2):
+#takes a 2D float array, resizes it, and converts it to bytes in "png" format for display with pysimplegui.image    
+    from io import BytesIO
+    from PIL import Image
+    import matplotlib.pyplot
+    import numpy
+    from skimage.transform import resize
+    #resize image to 300x300 pixels:
+    data_array = resize(data_array,(dim1,dim2),order=3)
+    norm = matplotlib.pyplot.Normalize(vmin=numpy.min(data_array), vmax=numpy.max(data_array))
+    cmap = matplotlib.pyplot.cm.viridis
+    rgba_img = cmap(norm(data_array))
+    # Convert RGBA array to RGB
+    rgb_img = (rgba_img[:, :, :3] * 255).astype(numpy.uint8) 
+    # Convert RGB image to PIL Image
+    pil_img = Image.fromarray(rgb_img)
+    # Convert PIL Image to bytes
+    image_bytes = BytesIO()
+    pil_img.save(image_bytes, format='PNG')
+    image_bytes.seek(0)
+    image_to_display=image_bytes.getvalue()
+    return image_to_display
+
 
 from modify_header import modify_bin_header
 from modify_header import modify_bnr_header
@@ -124,7 +146,7 @@ header_column = [
 # image display column
 display_column = [
     [simgui.Text("Input file image:")],
-    [simgui.Image(key="display")],
+    [simgui.Image(key='display')]
 ]
 
 # ----- Full layout -----
@@ -300,19 +322,9 @@ while True:
             window['headerdisplay'].update(value=in_file_info)
             print('In-File-Info:\n'+in_file_info)
             
-            #in_file_image=(in_file_image-min(in_file_image))*100
-            
             #show image
-            #resize image to 300x300 pixels:
-            dim1, dim2 = 300, 300
-            in_file_image = resize(in_file_image,(dim1,dim2),order=3)
-            
-            in_file_image_path=os.path.dirname(values['infilepath'])+'/in_file_image.png'
-            print('input file image path: '+in_file_image_path)
-            matplotlib.image.imsave(in_file_image_path, in_file_image)
-            window['display'].update(in_file_image_path)
-            os.remove(in_file_image_path)
-            
+            window['display'].update(data=array_to_bin_image(in_file_image,300,300))
+
         if in_file_extension == ".bnr":
             
             #get header info:
@@ -350,16 +362,9 @@ while True:
             in_file_info='File name: '+os.path.basename(values['infilepath'])+'\n\n'+'Sequence length: '+str(nImages)+'\n'+'Width: '+str(w)+'\n'+'Heigth: '+str(h)+'\n'+'Pixel size [m]: '+pz+'\n'+'Wavelength [nm]: '+waveshow+'\n'+'Refraction index 1: '+n_1+'\n'+'Refraction index 2: '+n_2+'\n\nMin: '+phasemin+'\nMax: '+phasemax+'\nMean: '+phaseavg+'\n'
             window['headerdisplay'].update(value=in_file_info)
             print('In-File-Info:\n',in_file_info)
-            #show image
-            #resize image to 300x300 pixels:
-            dim1, dim2 = 300, 300
-            in_file_image = resize(phase_map,(dim1,dim2),order=3)
             
-            in_file_image_path=os.path.dirname(values['infilepath'])+'/in_file_image.png'
-            print('input file image path: '+in_file_image_path)
-            matplotlib.image.imsave(in_file_image_path, in_file_image)
-            window['display'].update(in_file_image_path)
-            os.remove(in_file_image_path)
+            #show image
+            window['display'].update(data=array_to_bin_image(phase_map,300,300))
             
         if in_file_extension == ".tif":
             phase_map = tifffile.imread(values['infilepath'], key=0)
@@ -371,15 +376,9 @@ while True:
             in_file_info='File name: '+os.path.basename(values['infilepath'])+'\n\n'+'Width: '+str(w)+'\n'+'Heigth: '+str(h)+'\n\nAttention: When converting from tiff to another format, the pixel values might needed to be devided by hconv!\n\nMin: '+phasemin+'\nMax: '+phasemax+'\nMean: '+phaseavg
             window['headerdisplay'].update(value=in_file_info)
             print('In-File-Info:\n',in_file_info)
+            
             #show image
-            #resize image to 300x300 pixels:
-            dim1, dim2 = 300, 300
-            in_file_image = resize(phase_map,(dim1,dim2),order=3)
-            in_file_image_path=os.path.dirname(values['infilepath'])+'/in_file_image.png'
-            print('input file image path: '+in_file_image_path)
-            matplotlib.image.imsave(in_file_image_path, in_file_image)
-            window['display'].update(in_file_image_path)
-            os.remove(in_file_image_path)
+            window['display'].update(data=array_to_bin_image(phase_map,300,300))
     
     #suggest output file name if input file and output format are choosen
     if values['infilepath'] != "" and infilewithness != values['infilepath']:
