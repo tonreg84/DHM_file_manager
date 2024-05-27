@@ -1,7 +1,7 @@
 DHM file manager
 Autor: tonreg, team UMI, CNP-CHUV Lausanne
  
-Version 03 - 01.05.2024
+Version 04 - 27.05.2024
 
 This program is used to post-process data recorded during one experience with a LynceeTec DHM.
 
