@@ -1,7 +1,8 @@
 DHM file manager
-Autor: tonreg, team UMI, CNP-CHUV Lausanne
-
-Version 03 - 01.05.2024
+Autor: Gernot Scheerer, team UMI, CNP-CHUV Lausanne
+gernot.scheerer@hotmail.de
+ 
+Version 04 - 27.05.2024
 
 This program is used to post-process data recorded during one experience with a LynceeTec DHM.
 
@@ -22,4 +23,4 @@ b) convert files between "LynceeTec" formats
      
 c) modify the header of all bin files of a choosen folder. Click button "Bin-file header mod" to access this function.
 
-d) modify the header of a bnr file. Click button "Bnr-file header mod" to access this function.
+d) modify the header of a bnr file. Click button "Bnr-file header mod" to access this function. 

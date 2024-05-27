@@ -1,4 +1,4 @@
-def bin2tif(input_file,timestampsfile,wavelength,output_file):
+def bin2tif(input_file,timestampsfile,wavelength,output_file,master):
 #this function converts LynceeTec Koala bin files from one folder into a tif sequence
 #the bin files need to end with _00000_phase.bin, _00001_phase.bin, _00002_phase.bin, ..
 
@@ -7,109 +7,21 @@ def bin2tif(input_file,timestampsfile,wavelength,output_file):
 #wavelength of the DHM laser, float32
 #output_file: destination of the tif sequence file
 
-    import os
+    from os.path import dirname
     import binkoala
     from tifffile import imsave
-    import numpy
-    
-    import PySimpleGUI as simgui
-    
-    def is_float(string):
-        try:
-            float(string)
-            return True
-        except ValueError:
-            return False
+    from numpy import array, single
+    from tkinter import ttk, Toplevel, DoubleVar
+    import threading
+    from hconv_choice import hconv_choice_binary2X
 
-    binfolder=os.path.dirname(input_file)
+    binfolder=dirname(input_file)
     
-    #choice of conversion factor -START
-    # first make the popup window
-    Layout = [
-        [simgui.Checkbox("Do not apply a conversion factor.", default=True, font=('Arial Bold', 12), enable_events=True, key='nofact'),
-         ],
-        [simgui.Checkbox("Conversion from rad to degree: x360/2\Pi.", font=('Arial Bold', 12), enable_events=True, key='pifact'),
-         ],
-        [simgui.Checkbox("Apply the height conversion factor wavelength*(2Pi(n_2-n_1)^-1.", font=('Arial Bold', 12), enable_events=True, key='hconv'),
-         ],
-        [simgui.Checkbox("Apply the manual conversion factor:", font=('Arial Bold', 12), enable_events=True, key='manfact'),
-         simgui.In(size=(50, 1), enable_events=True, key="manual_factor")
-         ],
-        [
-        simgui.Text("   "),
-        ],
-        [simgui.Ok(key="ok"), simgui.Button(button_text='Cancel', enable_events=True, key="cancel-button")],
-        ]
-    conv_fact_win = simgui.Window('Choice of conversion factor', Layout, size=(550, 250))
-    
-    #open the popup window and check the entries
-    fact_check=False
-    fact_win_check=True
-    while fact_win_check==True:
-        event, values = conv_fact_win.read()
-        
-        if event == simgui.WIN_CLOSED:
-            fact_win_check=False
-        
-        if event == 'cancel-button':
-            fact_check=False
-            fact_win_check=False
-        
-        if event == 'nofact':
-            if conv_fact_win['nofact'].get() == True:
-                conv_fact_win['pifact'].update(value=False)
-                conv_fact_win['hconv'].update(value=False)
-                conv_fact_win['manfact'].update(value=False)
-        if event == 'pifact':
-            if conv_fact_win['pifact'].get() == True:
-                conv_fact_win['nofact'].update(value=False)
-                conv_fact_win['hconv'].update(value=False)
-                conv_fact_win['manfact'].update(value=False)
-        if event == 'hconv':
-            if conv_fact_win['hconv'].get() == True:
-                conv_fact_win['nofact'].update(value=False)
-                conv_fact_win['pifact'].update(value=False)
-                conv_fact_win['manfact'].update(value=False)
-        if event == 'manfact':
-            if conv_fact_win['manfact'].get() == True:
-                conv_fact_win['nofact'].update(value=False)
-                conv_fact_win['hconv'].update(value=False)
-                conv_fact_win['pifact'].update(value=False)
-    
-        if event == 'ok':
-            
-            if conv_fact_win['nofact'].get() == False and conv_fact_win['pifact'].get() == False and conv_fact_win['hconv'].get() == False and conv_fact_win['manfact'].get() == False:
-                simgui.popup_auto_close('Error: Please select an option for the conversion factor.')
-            else:
-                if conv_fact_win['manfact'].get() == True:
-                    if values['manual_factor'] == '':
-                        simgui.popup_auto_close('Error: Manual conversion factor missing.')
-                    elif is_float(values['manual_factor'])==False:
-                        simgui.popup_auto_close('Error: Please enter floating point numbers only.')
-                    else:
-                        conversion_factor=float(values['manual_factor'])
-                        fact_win_check=False
-                        fact_check=True
-                        
-                elif conv_fact_win['pifact'].get() == True:
-                    conversion_factor=360/6.283185307179586
-                    fact_win_check=False
-                    fact_check=True                        
-                    
-                elif conv_fact_win['hconv'].get() == True:
-                    (in_file_image,in_file_header)=binkoala.read_mat_bin(input_file)
-                    conversion_factor=in_file_header['hconv'][0]
-                    fact_win_check=False
-                    fact_check=True
-                
-                else:
-                    conversion_factor=None
-                    fact_win_check=False
-                    fact_check=True
-                    
-    conv_fact_win.close()
-    
-    if fact_check == True:
+    #get conversion factor
+    (conv_check, conversion_factor)=hconv_choice_binary2X(master,input_file)
+    print('Choice of conversion facot:',conv_check, conversion_factor)
+
+    if conv_check == True:
     #choice of conversion factor -END
 
         #read timestamps from timestampsfile
@@ -120,33 +32,45 @@ def bin2tif(input_file,timestampsfile,wavelength,output_file):
             for line in infile:
                 # Split the line into a list of numbers
                 numbers = line.split()
-                time=numpy.single(float(numbers[3]))
+                time=single(float(numbers[3]))
                 timelist.append(time)
                 k=k+1          
-            timestamps=numpy.array(timelist)
+            timestamps=array(timelist)
             
         nImages=len(timestamps) #sequence length
-    
+        
         #Progress bar
-        ProgLayout = [
-            [simgui.ProgressBar(nImages, orientation='h', expand_x=True, size=(30, 10),  key='prog')],
-            [simgui.Text('Images converted:', key='out', enable_events=True, font=('Arial Bold', 16), justification='center', expand_x=True)]
-        ]
-        progwin = simgui.Window('File conversion progress', ProgLayout, size=(450, 75))
-        event, values = progwin.read(timeout=100)
-    
-        #write the images of the sequence to the tiff file
-        for k in range(0,nImages):
+        # Function to update the progress bar 
+        def update_progress_bar():
             
-            progwin['prog'].update(current_count=k + 1)
-            progwin['out'].update('Images converted: '+str(k + 1)+' of '+str(nImages))
+            #write the images of the sequence to tif file
+            for k in range(0,nImages):
+                input_file_path=binfolder+'/'+str(k).rjust(5, '0')+'_phase.bin'
+                (phase_map,in_file_header)=binkoala.read_mat_bin(input_file_path)
+                
+                if conversion_factor != 1.0:
+                    phase_map=phase_map*conversion_factor
+                
+                imsave(output_file, phase_map, photometric='minisblack', compression=5, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
+        
+                progress_var.set(k)  # Update progress bar value
     
-            input_file_path=binfolder+'/'+str(k).rjust(5, '0')+'_phase.bin'
-            (phase_map,in_file_header)=binkoala.read_mat_bin(input_file_path)
-            
-            if conversion_factor != None:
-                phase_map=phase_map*conversion_factor
+            progress_window.destroy()  # Close the progress window when done
     
-            imsave(output_file, phase_map, photometric='minisblack', compression=5, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
+        # Create a new window for the progress bar
+        progress_window = Toplevel(master)
+        progress_window.geometry("350x100")
+        progress_window.title("Conversion progress bar")
+        
+        # Create a progress bar widget
+        progress_var = DoubleVar()
+        progress_bar = ttk.Progressbar(progress_window, maximum=nImages, variable=progress_var)
+        progress_bar.place(x=50, y=40, width=250)        
     
-        progwin.close()
+        # Run the update in a separate thread to avoid blocking the main thread
+        threading.Thread(target=update_progress_bar).start()
+        
+        progress_window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
+        progress_window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
+        progress_window.grab_set()
+        master.wait_window(progress_window)

@@ -1,45 +1,58 @@
-def tiffs_or_tiffS(in_file_extension):
-    
-#in_file_extension: string
-    
-    from PySimpleGUI import Text
-    from PySimpleGUI import Button
-    from PySimpleGUI import Window
-    from PySimpleGUI import WIN_CLOSED
-    
-    tiff_go_on=True
-    if in_file_extension == '.tif':
-    
-        Alayout = [
-            [Text('You have chosen a tiff file as input.\n\nIs it a TIFF stack containing a sequence or \na series of single-image TIFF files?'),],
-            [Button(button_text='TIFF stack',enable_events=True, key='tiffstack'),
-             Button(button_text='single-image files',enable_events=True, key='tiffsingle'),
-             Button(button_text='Cancel',enable_events=True, key='cancel-button'),
-             ],
-            ]
+def tiffs_or_tiffS(master):
+    import tkinter as tk
+    go_on=False
+    tiff_type=None
+
+    def check(w):
+        #if tik one box, set the other to false
+        if w=='stack':
+            if vstack.get() == True:
+                vsingle.set(False)
+        if w=='single':
+            if vsingle.get() == True:
+                vstack.set(False)
+
+    def confirm():    
+        nonlocal a
+        if vstack.get():
+            a=1
+            window.destroy()
+        elif vsingle.get():
+            a=2
+            window.destroy()
         
-        tiff_win = Window('tiff or tiffS?', Alayout, size=(275, 125))
-        
-        #open the popup window
-        tiff_win_check=True
-        tiff_go_on=False
-        while tiff_win_check == True:
-            event, values = tiff_win.read()
-            
-            if event == WIN_CLOSED:
-                tiff_win_check=False
-                
-            if event == 'cancel-button':
-                tiff_win_check=False
-                
-            if event == 'tiffstack':
-                tiff_win_check=False
-                tiff_go_on=True
-            
-            if event == 'tiffsingle':
-                tiff_win_check=False
-                tiff_go_on=True
-                in_file_extension='.single_tiffs'
-        tiff_win.close()
+    def cancel():
+        window.destroy()
     
-    return(tiff_go_on,in_file_extension)
+    a=None
+    
+    window = tk.Toplevel(master)
+    window.geometry("210x130")
+    window.title('-_-')
+
+    label = tk.Label(window, text= 'You have chosen a tiff file as input.')
+    label.pack()
+    vstack=tk.BooleanVar()
+    vsingle=tk.BooleanVar()
+    stackbutton = tk.Checkbutton(window, text='It is a tiff stack file.', variable=vstack, command=lambda: check('stack'))
+    stackbutton.pack()
+    stackbutton = tk.Checkbutton(window, text='These are single-image tiff files.', variable=vsingle, width=25, height=1, command=lambda: check('single'))
+    stackbutton.pack()
+    stackbutton = tk.Button(window, text='Confirm', width=6, height=1, command=confirm)
+    stackbutton.pack()
+    stackbutton = tk.Button(window, text='Cancel', width=5, height=1, command=cancel)
+    stackbutton.pack(pady=5)
+
+    window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
+    window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
+    window.grab_set()
+    master.wait_window(window)
+
+    if a==1:
+        go_on=True
+        tiff_type='.tif'
+    elif a==2:
+        go_on=True
+        tiff_type='.singletif'
+    
+    return(go_on,tiff_type)

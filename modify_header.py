@@ -1,5 +1,5 @@
-import PySimpleGUI as simgui
-import os
+import tkinter as tk
+from tkinter import filedialog
 import binkoala
 import numpy
 import struct
@@ -11,9 +11,121 @@ def is_float(string):
     except ValueError:
             return False
 
-def modify_bin_header(binfolder):
+def modify_bin_header(master):
     
-    #get header info and update window
+    def cancel():
+        tk.messagebox.showinfo('No header modification!', 'No header modification!')
+        window.destroy()
+        
+    def check_input():
+        w_out=Ewout.get()
+        if w_out=='':
+            w_out=w_in
+            Ewout.delete(0,tk.END)
+            Ewout.insert(0,w_in)
+        else:
+            if w_out.isdigit()==False:
+                tk.messagebox.showinfo('Error', 'Image width must be a positive integer!')
+                Ewout.delete(0,tk.END)
+                Ewout.insert(0,'')
+            else:
+                h_out=Ehout.get()
+                if h_out=='':
+                    h_out=h_in
+                    Ehout.delete(0,tk.END)
+                    Ehout.insert(0,h_in)
+                else:
+                    if h_out.isdigit()==False:
+                        tk.messagebox.showinfo('Error', 'Image height must be a positive integer!')
+                        Ehout.delete(0,tk.END)
+                        Ehout.insert(0,'')
+                    else:
+                        pz_out=Epout.get()
+                        if pz_out=='':
+                            pz_out=pz_in
+                            Epout.delete(0,tk.END)
+                            Epout.insert(0,pz_in)
+                        else:
+                            if is_float(pz_out)==False:
+                                tk.messagebox.showinfo('Error', 'Pixel size must be a floating point number!')
+                                Epout.delete(0,tk.END)
+                                Epout.insert(0,'')
+                            else:
+                                hconv_out=Ecout.get()
+                                if hconv_out=='':
+                                    hconv_out=hconv_in
+                                    Ecout.delete(0,tk.END)
+                                    Ecout.insert(0,hconv_in)
+                                else:
+                                    if is_float(hconv_out)==False:
+                                        tk.messagebox.showinfo('Error', 'Height conversion must be a floating point number!')
+                                        Ecout.delete(0,tk.END)
+                                        Ecout.insert(0,'')
+                                    else:
+                                        uc_out=Euout.get()
+                                        if uc_out=='':
+                                            uc_out=uc_in
+                                            Euout.delete(0,tk.END)
+                                            Euout.insert(0,uc_in)
+                                        else:
+                                            if uc_out.isdigit()==False:
+                                                tk.messagebox.showinfo('Error', 'Unit code must be a positive integer!')
+                                                Euout.delete(0,tk.END)
+                                                Euout.insert(0,'')
+                                            else:
+                                                tk.messagebox.showinfo('-_-', 'Input ok!')
+                                                Ewout.config(state= "disabled")
+                                                Ehout.config(state= "disabled")
+                                                Epout.config(state= "disabled")
+                                                Ecout.config(state= "disabled")
+                                                Euout.config(state= "disabled")
+                                                
+                                                start_button.config(state= "normal")
+
+    def reset_input():
+        Ewout.config(state= "normal")
+        Ehout.config(state= "normal")
+        Epout.config(state= "normal")
+        Ecout.config(state= "normal")
+        Euout.config(state= "normal")
+        
+        start_button.config(state= "disabled")
+        
+    def start():
+        w=int(Ewout.get())
+        h=int(Ehout.get())
+        pz=float(Epout.get())
+        hconv=float(Ecout.get())
+        uc=int(Euout.get())
+        
+        #read timestamps from timestampsfile
+        with open(timestampsfile, 'r') as infile:
+            k=0
+            timelist=[]
+            for line in infile:
+                # Split the line into a list of numbers
+                numbers = line.split()
+                time=numpy.single(float(numbers[3]))
+                timelist.append(time)
+                k=k+1
+            timestamps=numpy.array(timelist)
+        nImages=len(timestamps) #sequence length
+        
+        for k in range(nImages):
+            
+            file_path=binfolder+'/'+str(k).rjust(5, '0')+'_phase.bin'
+            
+            (phase_map,file_header_placeholder)=binkoala.read_mat_bin(file_path)
+            
+            binkoala.write_mat_bin(file_path, phase_map, w, h, pz, hconv, uc)
+
+        tk.messagebox.showinfo('-_-', 'Header mofification done.')
+        window.destroy()
+        
+    binfolder=filedialog.askdirectory(title="Select a folder with DHM bin files")
+    timestampsfile=filedialog.askopenfilename(title="Select a timestamps file")
+    
+    #get header
     in_file=binfolder+'/00000_phase.bin'
     (phase_map,file_header)=binkoala.read_mat_bin(in_file)
     hv_in=str(file_header['version'][0])
@@ -25,194 +137,194 @@ def modify_bin_header(binfolder):
     hconv_in=str(file_header['hconv'][0])
     uc_in=str(file_header['unit_code'][0])
     
-    # header_mod_win['hv_in'].update(value=hv_in)
-    # header_mod_win['end_in'].update(value=end_in)
-    # header_mod_win['hz_in'].update(value=hz_in)
-    # header_mod_win['w_in'].update(value=w_in)
-    # header_mod_win['h_in'].update(value=h_in)
-    # header_mod_win['pz_in'].update(value=pz_in)
-    # header_mod_win['hconv_in'].update(value=hconv_in)
-    # header_mod_win['uc_in'].update(value=uc_in)
+    window = tk.Toplevel(master)
+    window.title('Bin-file header modification')
     
-    HMLayout = [
-        [   simgui.Text("Which elements of the header do you want to change?", font=('Arial Bold', 14)),
-        ],
-        [simgui.Text("                              ", font=('Arial Bold', 12)),
-         ],
-        [   simgui.Text("                              ", font=('Arial Bold', 12)),
-            simgui.Text("Current header", font=('Arial Bold', 12)),simgui.Text("       ", font=('Arial Bold', 12)),
-            simgui.Text("Replace with", font=('Arial Bold', 12)),
-        ],
-        # [   simgui.Text("Header version    ", font=('Arial Bold', 12)),
-        #     simgui.In(size=(15, 1), enable_events=True, key="hv_in", default_text=hv_in),simgui.Text("      ", font=('Arial Bold', 12)),
-        #     simgui.In(size=(15, 1), enable_events=True, key="hv_out,")
-        # ],
-        # [   simgui.Text("Endiannes         ", font=('Arial Bold', 12)),
-        #     simgui.In(size=(15, 1), enable_events=True, key="end_in", default_text=end_in),simgui.Text("      ", font=('Arial Bold', 12)),
-        #     simgui.In(size=(15, 1), enable_events=True, key="end_out,")
-        # ],
-        # [   simgui.Text("Header size         ", font=('Arial Bold', 12)),
-        #     simgui.In(size=(15, 1), enable_events=True, key="hz_in", default_text=hz_in),simgui.Text("      ", font=('Arial Bold', 12)),
-        #     simgui.In(size=(15, 1), enable_events=True, key="hz_out,")
-        # ],
-        [   simgui.Text("Image width          ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="w_in", default_text=w_in),simgui.Text("      ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="w_out"),
-        ],
-        [   simgui.Text("Image hight         ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="h_in", default_text=h_in),simgui.Text("      ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="h_out"),
-        ],
-        [   simgui.Text("Pixel size            ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="pz_in", default_text=pz_in),simgui.Text("      ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="pz_out"),
-        ],
-        [   simgui.Text("Height conversion", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="hconv_in", default_text=hconv_in),simgui.Text("      ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="hconv_out"),
-        ],
-        [   simgui.Text("Unit code            ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="uc_in", default_text=uc_in),simgui.Text("      ", font=('Arial Bold', 12)),
-            simgui.In(size=(15, 1), enable_events=True, key="uc_out"),
-        ],
-        [simgui.Text("(1=rad, 2=m, 0=no unit)", font=('Arial Bold', 10)),],
-        [simgui.Text("                              ", font=('Arial Bold', 12)),
-         ],
-        [simgui.Button(button_text='Check input', enable_events=True, key="check-button"),
-         simgui.Button(button_text='Reset input', enable_events=True, key="reset-button"),
-         ],
-        [simgui.Button(button_text='Start header modification', disabled=True, enable_events=True, key="start-button"),
-         simgui.Text("                                  ", font=('Arial Bold', 12)),
-         simgui.Button(button_text='Cancel', enable_events=True, key="cancel-button"),
-         ],
-        ]
+    #toplabel = tk.Label(window, text= "Which elements of the header do you want to change?")
+    current = tk.Label(window, text= "Current header")
+    replace = tk.Label(window, text= "Replace with")
+    Lw = tk.Label(window, text= "Image width")
+    Ewin = tk.Entry(window, width=15)
+    Ewin.insert(0,w_in)
+    Ewout = tk.Entry(window, width=15)
+    Lh = tk.Label(window, text= "Image height")
+    Ehin = tk.Entry(window, width=15)
+    Ehin.insert(0,h_in)
+    Ehout = tk.Entry(window, width=15)
+    Lp = tk.Label(window, text= "Pixel size")
+    Epin = tk.Entry(window, width=15)
+    Epin.insert(0,pz_in)
+    Epout = tk.Entry(window, width=15)
+    Lc =tk.Label(window, text= "Height conversion")
+    Ecin = tk.Entry(window, width=15)
+    Ecin.insert(0,hconv_in)
+    Ecout = tk.Entry(window, width=15)
+    Lu = tk.Label(window, text= "Unit code")
+    Euin = tk.Entry(window, width=15)
+    Euin.insert(0,uc_in)
+    Euout = tk.Entry(window, width=15)
+    Luexp = tk.Label(window, text= "(1=rad, 2=m, 0=no unit)")
     
-    header_mod_win = simgui.Window('Bin-file header modification', HMLayout, size=(500, 350))
+    check_button = tk.Button(window, text='Check input', command=check_input)
+    reset_button = tk.Button(window, text='Reset input', command=reset_input)
+    start_button = tk.Button(window, text='Start header modification', command=start)
+    start_button.config(state= "disabled")
+    cancel_button = tk.Button(window, text='Cancel', command=cancel)
     
-    timestampsfile=simgui.popup_get_file('Please select a timestamps file:',  title="Get timestamps file")
-    if timestampsfile!=None:
-        if timestampsfile=='':
-            simgui.popup_auto_close('Error: No timestamps file selected.')
-        elif os.path.isfile(timestampsfile)==False:
-                simgui.popup_auto_close('Error: The file doesn\'t exist.')
-        else: 
-            file_name, file_extension = os.path.splitext(timestampsfile)
-            if file_extension!='.txt':
-                simgui.popup_auto_close('Error: Wrong timestamps file format.')
+    #toplabel.grid(row=0, column=1, padx=5, pady=5, sticky="nw")
+    current.grid(row=1, column=1, padx=5, pady=5, sticky="nw")
+    replace.grid(row=1, column=2, padx=5, pady=5, sticky="nw")
+    Lw.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
+    Ewin.grid(row=2, column=1, padx=5, pady=5, sticky="nw")
+    Ewout.grid(row=2, column=2, padx=5, pady=5, sticky="nw")
+    Lh.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
+    Ehin.grid(row=3, column=1, padx=5, pady=5, sticky="nw")
+    Ehout.grid(row=3, column=2, padx=5, pady=5, sticky="nw")
+    Lp.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
+    Epin.grid(row=4, column=1, padx=5, pady=5, sticky="nw")
+    Epout.grid(row=4, column=2, padx=5, pady=5, sticky="nw")
+    Lc.grid(row=5, column=0, padx=5, pady=5, sticky="nw")
+    Ecin.grid(row=5, column=1, padx=5, pady=5, sticky="nw")
+    Ecout.grid(row=5, column=2, padx=5, pady=5, sticky="nw")
+    Lu.grid(row=6, column=0, padx=5, pady=5, sticky="nw")
+    Euin.grid(row=6, column=1, padx=5, pady=5, sticky="nw")
+    Euout.grid(row=6, column=2, padx=5, pady=5, sticky="nw")
+    Luexp.grid(row=7, column=0, padx=5, pady=5, sticky="nw")
+    
+    check_button.grid(row=8, column=0, padx=5, pady=5, sticky="nw")
+    reset_button.grid(row=8, column=1, padx=5, pady=5, sticky="nw")
+    start_button.grid(row=9, column=0, padx=5, pady=5, sticky="nw")
+    cancel_button.grid(row=9, column=1, padx=5, pady=5, sticky="nw")
+    
+    window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
+    window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
+    window.grab_set()
+    master.wait_window(window)
+    
+############################################################################################################
+############################################################################################################
+############################################################################################################
+############################################################################################################
+############################################################################################################
+############################################################################################################
+
+def modify_bnr_header(master):
+    
+    def cancel():
+        tk.messagebox.showinfo('No header modification!', 'No header modification!')
+        window.destroy()
+        
+    def check_input():
+        w_out=Ewout.get()
+        if w_out=='':
+            w_out=w_in
+            Ewout.delete(0,tk.END)
+            Ewout.insert(0,w_in)
+        else:
+            if w_out.isdigit()==False:
+                tk.messagebox.showinfo('Error', 'Image width must be a positive integer!')
+                Ewout.delete(0,tk.END)
+                Ewout.insert(0,'')
             else:
-                print('banana')
-                hm_win_check=True
-                while hm_win_check==True:
-                    event, values = header_mod_win.read()
-
-                    if event == simgui.WIN_CLOSED:
-                        simgui.popup_auto_close('No header modification!')
-                        hm_win_check=False
-                    
-                    if event == 'cancel-button':
-                        simgui.popup_auto_close('No header modification!')
-                        hm_win_check=False
-                        
-                    if event == 'check-button':
-                        
-                        w_out=values['w_out']
-                        if w_out=='':
-                            w_out=w_in
-                            header_mod_win['w_out'].update(value=w_in)
+                h_out=Ehout.get()
+                if h_out=='':
+                    h_out=h_in
+                    Ehout.delete(0,tk.END)
+                    Ehout.insert(0,h_in)
+                else:
+                    if h_out.isdigit()==False:
+                        tk.messagebox.showinfo('Error', 'Image height must be a positive integer!')
+                        Ehout.delete(0,tk.END)
+                        Ehout.insert(0,'')
+                    else:
+                        pz_out=Epout.get()
+                        if pz_out=='':
+                            pz_out=pz_in
+                            Epout.delete(0,tk.END)
+                            Epout.insert(0,pz_in)
                         else:
-                            if w_out.isdigit()==False:
-                                simgui.popup_auto_close('Image width must be a positive integer!')
-                                header_mod_win['w_out'].update(value='')
+                            if is_float(pz_out)==False:
+                                tk.messagebox.showinfo('Error', 'Pixel size must be a floating point number!')
+                                Epout.delete(0,tk.END)
+                                Epout.insert(0,'')
                             else:
-                                h_out=values['h_out']
-                                if h_out=='':
-                                    h_out=h_in
-                                    header_mod_win['h_out'].update(value=h_in)
+                                wave_out=Ewvout.get()
+                                if wave_out=='':
+                                    wave_out=wave_in
+                                    Ewvout.delete(0,tk.END)
+                                    Ewvout.insert(0,wave_in)
                                 else:
-                                    if h_out.isdigit()==False:
-                                        simgui.popup_auto_close('Image height must be a positive integer!')
-                                        header_mod_win['h_out'].update(value='')
+                                    if is_float(wave_out)==False:
+                                        tk.messagebox.showinfo('Error', 'Wavelength must be a floating point number!')
+                                        Ewvout.delete(0,tk.END)
+                                        Ewvout.insert(0,'')
                                     else:
-                                        pz_out=values['pz_out']
-                                        if pz_out=='':
-                                            pz_out=pz_in
-                                            header_mod_win['pz_out'].update(value=pz_in)
+                                        n_1_out=En1out.get()
+                                        if n_1_out=='':
+                                            n_1_out=n_1_in
+                                            En1out.delete(0,tk.END)
+                                            En1out.insert(0,n_1_in)
                                         else:
-                                            if is_float(pz_out)==False:
-                                                simgui.popup_auto_close('Pixel size must be a floating point number!')
-                                                header_mod_win['pz_out'].update(value='')
+                                            if is_float(n_1_out)==False:
+                                                tk.messagebox.showinfo('Error', 'n_1 must be a floating point number!')
+                                                En1out.delete(0,tk.END)
+                                                En1out.insert(0,'')
                                             else:
-                                                hconv_out=values['hconv_out']
-                                                if hconv_out=='':
-                                                    hconv_out=hconv_in
-                                                    header_mod_win['hconv_out'].update(value=hconv_in)
+                                                n_2_out=En2out.get()
+                                                if n_2_out=='':
+                                                    n_2_out=n_2_in
+                                                    En2out.delete(0,tk.END)
+                                                    En2out.insert(0,n_2_in)
                                                 else:
-                                                    if is_float(hconv_out)==False:
-                                                        simgui.popup_auto_close('Height conversion must be a floating point number!')
-                                                        header_mod_win['hconv_out'].update(value='')
+                                                    if is_float(n_2_out)==False:
+                                                        tk.messagebox.showinfo('Error', 'n_2 must be a floating point number!')
+                                                        En2out.delete(0,tk.END)
+                                                        En2out.insert(0,'')
                                                     else:
-                                                        uc_out=values['uc_out']
-                                                        if uc_out=='':
-                                                            uc_out=uc_in
-                                                            header_mod_win['uc_out'].update(value=uc_in)
-                                                        else:
-                                                            if uc_out.isdigit()==False:
-                                                                simgui.popup_auto_close('Unit code must be a positive integer!')
-                                                                header_mod_win['uc_out'].update(value='')
-                                                            else:
-                                                                simgui.popup_auto_close('Input ok!')
-                                                                header_mod_win['w_out'].update(disabled=True)
-                                                                header_mod_win['h_out'].update(disabled=True)
-                                                                header_mod_win['pz_out'].update(disabled=True)
-                                                                header_mod_win['hconv_out'].update(disabled=True)
-                                                                header_mod_win['uc_out'].update(disabled=True)
-                                                                
-                                                                header_mod_win['start-button'].update(disabled=False)
-                                                         
-                    if event == 'reset-button':
-                        header_mod_win['start-button'].update(disabled=True)
-                        header_mod_win['w_out'].update(disabled=False)
-                        header_mod_win['h_out'].update(disabled=False)
-                        header_mod_win['pz_out'].update(disabled=False)
-                        header_mod_win['hconv_out'].update(disabled=False)
-                        header_mod_win['uc_out'].update(disabled=False)
-                        
-                    if event == 'start-button':
+                                                        tk.messagebox.showinfo('-_-', 'Input ok!')
+                                                        Ewout.config(state= "disabled")
+                                                        Ehout.config(state= "disabled")
+                                                        Epout.config(state= "disabled")
+                                                        Ewvout.config(state= "disabled")
+                                                        En1out.config(state= "disabled")
+                                                        En2out.config(state= "disabled")
                                                 
-                        w=int(w_out)
-                        h=int(h_out)
-                        pz=float(pz_out)
-                        hconv=float(hconv_out)
-                        uc=int(uc_out)
-                        
-                        #read timestamps from timestampsfile
-                        with open(timestampsfile, 'r') as infile:
-                            k=0
-                            timelist=[]
-                            for line in infile:
-                                # Split the line into a list of numbers
-                                numbers = line.split()
-                                time=numpy.single(float(numbers[3]))
-                                timelist.append(time)
-                                k=k+1
-                            timestamps=numpy.array(timelist)
-                        nImages=len(timestamps) #sequence length
-                        
-                        for k in range(nImages):
-                            
-                            file_path=binfolder+'/'+str(k).rjust(5, '0')+'_phase.bin'
-                            
-                            (phase_map,file_header_placeholder)=binkoala.read_mat_bin(file_path)
-                            
-                            binkoala.write_mat_bin(file_path, phase_map, w, h, pz, hconv, uc)
-
-                        hm_win_check=False
-                        simgui.auto_close('Header mofification done.')
-                header_mod_win.close()  
-                
-def modify_bnr_header(bnrfile):
+                                                        start_button.config(state= "normal")
     
-    #get data from bnr file
+    def reset_input():
+        Ewout.config(state= "normal")
+        Ehout.config(state= "normal")
+        Epout.config(state= "normal")
+        Ewvout.config(state= "normal")
+        En1out.config(state= "normal")
+        En2out.config(state= "normal")
+        
+        start_button.config(state= "disabled")
+        
+    def start():
+        w=int(Ewout.get())
+        h=int(Ehout.get())
+        pz=float(Epout.get())
+        wave=float(Ewvout.get())
+        n_1=float(En1out.get())
+        n_2=float(En2out.get())
+        
+        x=struct.pack('iii', nImages, w, h)
+        y=struct.pack('ffff', pz, wave, n_1, n_2)
+        
+        with open(bnrfile, 'rb+') as fileID:
+            fileID.seek(0)
+            fileID.write(x)
+            fileID.write(y)
+        
+        fileID.close()
+        
+        tk.messagebox.showinfo('-_-', 'Header mofification done.')
+        window.destroy()
+    
+    bnrfile=filedialog.askopenfilename(title="Select a bnr file")
+
+    #get header from bnr file
     fileID = open(bnrfile, 'rb')
     nImages = numpy.fromfile(fileID, dtype="i4", count=1)
     nImages = nImages[0]
@@ -230,162 +342,71 @@ def modify_bnr_header(bnrfile):
     n_2_in=n_2[0]
     fileID.close
     
-    HMLayout = [
-        [simgui.Text('File name: '+os.path.basename(bnrfile), font=('Arial Bold', 14)),
-        ],
-        [simgui.Text("Which elements of the header do you want to change?", font=('Arial Bold', 14)),
-        ],
-        [simgui.Text("                              ", font=('Arial Bold', 12)),
-         ],
-        [simgui.Text("                              ", font=('Arial Bold', 12)),
-         simgui.Text("Current header", font=('Arial Bold', 12)),simgui.Text("       ", font=('Arial Bold', 12)),
-         simgui.Text("Replace with", font=('Arial Bold', 12)),
-        ],
-        [simgui.Text("Image width          ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="w_in", default_text=w_in),simgui.Text("      ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="w_out"),
-        ],
-        [simgui.Text("Image hight         ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="h_in", default_text=h_in),simgui.Text("      ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="h_out"),
-        ],
-        [simgui.Text("Pixel size            ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="pz_in", default_text=pz_in),simgui.Text("      ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="pz_out"),
-        ],
-        [simgui.Text("Wavelength", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="wave_in", default_text=wave_in),simgui.Text("      ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="wave_out"),
-        ],
-        [simgui.Text("n_1            ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="n_1_in", default_text=n_1_in),simgui.Text("      ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="n_1_out"),
-        ],
-        [simgui.Text("n_2            ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="n_2_in", default_text=n_2_in),simgui.Text("      ", font=('Arial Bold', 12)),
-         simgui.In(size=(15, 1), enable_events=True, key="n_2_out"),
-         ],
-        [simgui.Button(button_text='Check input', enable_events=True, key="check-button"),
-          simgui.Button(button_text='Reset input', enable_events=True, key="reset-button"),
-          ],
-        [simgui.Button(button_text='Start header modification', disabled=True, enable_events=True, key="start-button"),
-          simgui.Text("                                  ", font=('Arial Bold', 12)),
-          simgui.Button(button_text='Cancel', enable_events=True, key="cancel-button"),
-          ],
-        ]
+    window = tk.Toplevel(master)
+    window.title('Bin-file header modification')
     
-    header_mod_win = simgui.Window('Bnr-file header modification', HMLayout, size=(500, 350))
+    #toplabel = tk.Label(window, text= "Which elements of the header do you want to change?")
+    current = tk.Label(window, text= "Current header")
+    replace = tk.Label(window, text= "Replace with")
+    Lw = tk.Label(window, text= "Image width")
+    Ewin = tk.Entry(window, width=15)
+    Ewin.insert(0,w_in)
+    Ewout = tk.Entry(window, width=15)
+    Lh = tk.Label(window, text= "Image height")
+    Ehin = tk.Entry(window, width=15)
+    Ehin.insert(0,h_in)
+    Ehout = tk.Entry(window, width=15)
+    Lp = tk.Label(window, text= "Pixel size")
+    Epin = tk.Entry(window, width=15)
+    Epin.insert(0,pz_in)
+    Epout = tk.Entry(window, width=15)
+    Lwv = tk.Label(window, text= "Wavelength")
+    Ewvin = tk.Entry(window, width=15)
+    Ewvin.insert(0,wave_in)
+    Ewvout = tk.Entry(window, width=15)
+    Ln1 = tk.Label(window, text= "n_1")
+    En1in = tk.Entry(window, width=15)
+    En1in.insert(0,n_1_in)
+    En1out = tk.Entry(window, width=15)
+    Ln2 = tk.Label(window, text= "n_2")
+    En2in = tk.Entry(window, width=15)
+    En2in.insert(0,n_2_in)
+    En2out = tk.Entry(window, width=15)
     
-    hm_win_check=True
-    while hm_win_check==True:
-        event, values = header_mod_win.read()
-
-        if event == simgui.WIN_CLOSED:
-            simgui.popup_auto_close('No header modification!')
-            hm_win_check=False
-        
-        if event == 'cancel-button':
-            simgui.popup_auto_close('No header modification!')
-            hm_win_check=False
-            
-        if event == 'check-button':
-            
-            w_out=values['w_out']
-            if w_out=='':
-                w_out=w_in
-                header_mod_win['w_out'].update(value=w_in)
-            else:
-                if w_out.isdigit()==False:
-                    simgui.popup_auto_close('Image width must be a positive integer!')
-                    header_mod_win['w_out'].update(value='')
-                else:
-                    h_out=values['h_out']
-                    if h_out=='':
-                        h_out=h_in
-                        header_mod_win['h_out'].update(value=h_in)
-                    else:
-                        if h_out.isdigit()==False:
-                            simgui.popup_auto_close('Image height must be a positive integer!')
-                            header_mod_win['h_out'].update(value='')
-                        else:
-                            pz_out=values['pz_out']
-                            if pz_out=='':
-                                pz_out=pz_in
-                                header_mod_win['pz_out'].update(value=pz_in)
-                            else:
-                                if is_float(pz_out)==False:
-                                    simgui.popup_auto_close('Pixel size must be a floating point number!')
-                                    header_mod_win['pz_out'].update(value='')
-                                else:
-                                    wave_out=values['wave_out']
-                                    if wave_out=='':
-                                        wave_out=wave_in
-                                        header_mod_win['wave_out'].update(value=wave_in)
-                                    else:
-                                        if is_float(wave_out)==False:
-                                            simgui.popup_auto_close('Wavelength must be a floating point number!')
-                                            header_mod_win['wave_out'].update(value='')
-                                        else:
-                                            n_1_out=values['n_1_out']
-                                            if n_1_out=='':
-                                                n_1_out=n_1_in
-                                                header_mod_win['n_1_out'].update(value=n_1_in)
-                                            else:
-                                                if is_float(n_1_out)==False:
-                                                    simgui.popup_auto_close('n_1 must be a floating point number!')
-                                                    header_mod_win['n_1_out'].update(value='')
-                                                else:
-                                                    n_2_out=values['n_2_out']
-                                                    if n_2_out=='':
-                                                        n_2_out=n_2_in
-                                                        header_mod_win['n_2_out'].update(value=n_2_in)
-                                                    else:
-                                                        if is_float(n_2_out)==False:
-                                                            simgui.popup_auto_close('n_2 must be a floating point number!')
-                                                            header_mod_win['n_2_out'].update(value='')
-                                                        else:
-                                                            simgui.popup_auto_close('Input ok!')
-                                                            header_mod_win['w_out'].update(disabled=True)
-                                                            header_mod_win['h_out'].update(disabled=True)
-                                                            header_mod_win['pz_out'].update(disabled=True)
-                                                            header_mod_win['wave_out'].update(disabled=True)
-                                                            header_mod_win['n_1_out'].update(disabled=True)
-                                                            header_mod_win['n_2_out'].update(disabled=True)
-                                                            
-                                                            header_mod_win['start-button'].update(disabled=False)
-                                             
-        if event == 'reset-button':
-            header_mod_win['start-button'].update(disabled=True)
-            header_mod_win['w_out'].update(disabled=False)
-            header_mod_win['h_out'].update(disabled=False)
-            header_mod_win['pz_out'].update(disabled=False)
-            header_mod_win['wave_out'].update(disabled=False)
-            header_mod_win['n_1_out'].update(disabled=False)
-            header_mod_win['n_2_out'].update(disabled=False)
-            
-        if event == 'start-button':
-                                    
-            w=int(w_out)
-            h=int(h_out)
-            pz=float(pz_out)
-            wave=float(wave_out)
-            n_1=float(n_1_out)
-            n_2=float(n_2_out)
-            
-            x=struct.pack('iii', nImages, w, h)
-            y=struct.pack('ffff', pz, wave, n_1, n_2)
-            
-            with open(bnrfile, 'rb+') as fileID:
-                fileID.seek(0)
-                fileID.write(x)
-                fileID.write(y)
-            
-            fileID.close()
-                
-            simgui.popup_auto_close('Header mofification done.')
-            
-            hm_win_check=False
-            
-    header_mod_win.close()  
-                
-                        
+    check_button = tk.Button(window, text='Check input', command=check_input)
+    reset_button = tk.Button(window, text='Reset input', command=reset_input)
+    start_button = tk.Button(window, text='Start header modification', command=start)
+    start_button.config(state= "disabled")
+    cancel_button = tk.Button(window, text='Cancel', command=cancel)
+    
+    #toplabel.grid(row=0, column=1, padx=5, pady=5, sticky="nw")
+    current.grid(row=1, column=1, padx=5, pady=5, sticky="nw")
+    replace.grid(row=1, column=2, padx=5, pady=5, sticky="nw")
+    Lw.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
+    Ewin.grid(row=2, column=1, padx=5, pady=5, sticky="nw")
+    Ewout.grid(row=2, column=2, padx=5, pady=5, sticky="nw")
+    Lh.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
+    Ehin.grid(row=3, column=1, padx=5, pady=5, sticky="nw")
+    Ehout.grid(row=3, column=2, padx=5, pady=5, sticky="nw")
+    Lp.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
+    Epin.grid(row=4, column=1, padx=5, pady=5, sticky="nw")
+    Epout.grid(row=4, column=2, padx=5, pady=5, sticky="nw")
+    Lwv.grid(row=5, column=0, padx=5, pady=5, sticky="nw")
+    Ewvin.grid(row=5, column=1, padx=5, pady=5, sticky="nw")
+    Ewvout.grid(row=5, column=2, padx=5, pady=5, sticky="nw")
+    Ln1.grid(row=6, column=0, padx=5, pady=5, sticky="nw")
+    En1in.grid(row=6, column=1, padx=5, pady=5, sticky="nw")
+    En1out.grid(row=6, column=2, padx=5, pady=5, sticky="nw")
+    Ln2.grid(row=7, column=0, padx=5, pady=5, sticky="nw")
+    En2in.grid(row=7, column=1, padx=5, pady=5, sticky="nw")
+    En2out.grid(row=7, column=2, padx=5, pady=5, sticky="nw")
+    
+    check_button.grid(row=8, column=0, padx=5, pady=5, sticky="nw")
+    reset_button.grid(row=8, column=1, padx=5, pady=5, sticky="nw")
+    start_button.grid(row=9, column=0, padx=5, pady=5, sticky="nw")
+    cancel_button.grid(row=9, column=1, padx=5, pady=5, sticky="nw")
+    
+    window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
+    window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
+    window.grab_set()
+    master.wait_window(window)
