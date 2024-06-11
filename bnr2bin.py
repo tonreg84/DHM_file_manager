@@ -1,9 +1,12 @@
 def bnr2bin(input_file,timestampsfile,wavelength,output_folder,master):
-#this function converts LynceeTec Possum bnr sequence to single bin files (LynceeTec format)
+# function for the program DHM file manager v04
+    
+#this function converts LynceeTec Possum bnr sequence to single-image bin files (LynceeTec format)
 
 #input_file: filepath of the bnr sequence
-#timestampsfile: int32 array from 3rd column of Koala timestamps file
-#output_file -> the bin files will be saved in the folder "output_file_Bin files
+#timestampsfile: filepath of the corresponding Koala timestamps file, from there we will take the int32 array from 3rd column
+#wavelength of the DHM laser, float32
+#output_folder -> the bin files will be saved in the folder "output_file_Bin files
 
     from os.path import isdir, basename
     from os import mkdir

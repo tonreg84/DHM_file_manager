@@ -1,9 +1,12 @@
 def tif2tiffS(input_file,timestampsfile,wavelength,output_folder,master):
+# function for the program DHM file manager v04
+    
 #this function converts a tiff sequence into single tiff files
 
 #input_file: filepath of the tiff sequence
-#timestampsfile: int32 array from 3rd column of Koala timestamps file
-#output_file -> the tiff files will be saved in the folder "output_file_tiff files"
+#timestampsfile: int32 array from 3rd column of Koala timestamps file#timestampsfile: filepath of the corresponding Koala timestamps file, from there we will take the int32 array from 3rd column#output_file -> the tiff files will be saved in the folder "output_file_tiff files"
+#wavelength of the DHM laser, float32
+#output_folder -> the tiff files will be saved in the folder output_folder+'_tiff files'
 
     from os.path import isdir, basename
     from os import mkdir

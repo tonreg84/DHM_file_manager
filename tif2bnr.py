@@ -1,8 +1,11 @@
 def tif2bnr(input_file,timestampsfile,wavelength,output_file,master):
-#this function converts a tiff sequence (data from LynceeTec Koala) into a bnr sequence (LynceeTec format)
+# function for the program DHM file manager v04
+    
+#this function converts a tiff stack (data from LynceeTec Koala) into a bnr sequence (LynceeTec format)
 
 #input_file: filepath of the tiff sequence
-#timestampsfile: int32 array from 3rd column of Koala timestamps file
+#timestampsfile: filepath of the corresponding Koala timestamps file, from there we will take the int32 array from 3rd column
+#wavelength of the DHM laser, float32
 #output_file: destination of the bnr sequence file
 
     import numpy

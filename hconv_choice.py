@@ -1,4 +1,15 @@
+"""
+module for the program DHM file manager v04
+
+the functions are called to chose a conversion factor, e.g. from radiant to nanometer
+
+opens a GUI
+"""
+
 def hconv_choice_binary2X(master,input_file):
+    # this one is used when convertion from a "lynceetec format" (.bin, .bnr)
+    # to any other format supported by the main programme
+    
     import tkinter as tk
     
     alist=input_file.split('.')
@@ -12,11 +23,12 @@ def hconv_choice_binary2X(master,input_file):
             return False
     
     def cancel():
+        # when pushing of the cancel button
         global conv_check
         conv_check=False
         window.destroy()
     def checkit(S):
-        #if tik one w box, set the other to false
+        #if tik one box, set the other to false
         if S =='manfact':
             if vmanfact.get() == True:
                 vpifact.set(False)
@@ -55,7 +67,7 @@ def hconv_choice_binary2X(master,input_file):
                 vdegree.set(False)
 
     def ok():
-        #check the entries, make conversion factor in float
+        #check the entries, make conversion factor as floating point number
         nonlocal conversion_factor
         nonlocal conv_check
         if vmanfact.get() == True:
@@ -134,9 +146,15 @@ def hconv_choice_binary2X(master,input_file):
     conv_check=False
     conversion_factor=None
     
+    ################################################################
+    # define the GUI window and it's layout
+    
     window = tk.Toplevel(master)
     window.title('Choice of conversion factor')
     
+    ###################################
+    # define the widgets:
+        
     vmanfact=tk.BooleanVar()
     manfact=tk.Checkbutton(window, text="Apply the conversion factor:", variable=vmanfact, command=lambda: checkit('manfact'))
     vmanfact.set(True)
@@ -154,6 +172,9 @@ def hconv_choice_binary2X(master,input_file):
     okbutton=tk.Button(window, text="Ok", width=16, height=1, command=lambda: ok())
     cancelbutton=tk.Button(window, text="Cancel", width=16, height=1, command=lambda: cancel())
     
+    ##################################
+    # positionning of the widgets
+
     manfact.grid(row=0, column=0, padx=5, pady=5, sticky="nw")
     manfact_entry.grid(row=0, column=1, padx=5, pady=5, sticky="nw")
     pifact.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
@@ -164,6 +185,9 @@ def hconv_choice_binary2X(master,input_file):
     okbutton.grid(row=5, column=0, padx=5, pady=5, sticky="nw")
     cancelbutton.grid(row=5, column=1, padx=5, pady=5, sticky="nw")
     
+    ##################################
+    # some tkinter window configuration:
+    
     window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
     window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
     window.grab_set()
@@ -172,6 +196,7 @@ def hconv_choice_binary2X(master,input_file):
     return conv_check, conversion_factor
 
 def hconv_choice_tif2binary(master,wave):
+    # this one is used when convertion from tif format to a "lynceetec format" (.bin, .bnr)
     import tkinter as tk
     
     def is_float(string):
@@ -182,11 +207,12 @@ def hconv_choice_tif2binary(master,wave):
             return False
     
     def cancel():
+        # when pushing of the cancel button
         global conv_check
         conv_check=False
         window.destroy()
     def checkit(S):
-        #if tik one w box, set the other to false
+        #if tik one box, set the other to false
         if S =='manfact':
             if vmanfact.get() == True:
                 vpifact.set(False)
@@ -337,6 +363,7 @@ def hconv_choice_tif2binary(master,wave):
     return conv_check, conversion_factor, n_1, n_2, pz
 
 def hconv_choice_tif2tif(master,wave):
+    # this oneis used when converting fromsingle-image tiff to tiff stack or vice versa
     import tkinter as tk
     
     def is_float(string):
@@ -347,11 +374,12 @@ def hconv_choice_tif2tif(master,wave):
             return False
     
     def cancel():
+        # when pushing of the cancel button
         global conv_check
         conv_check=False
         window.destroy()
     def checkit(S):
-        #if tik one w box, set the other to false
+        #if tik one box, set the other to false
         if S =='manfact':
             if vmanfact.get() == True:
                 vpifact.set(False)
@@ -447,9 +475,15 @@ def hconv_choice_tif2tif(master,wave):
     n_2=None
     pz=None
     
+    ################################################################
+    # define the GUI window and it's layout
+    
     window = tk.Toplevel(master)
     window.title('Conversion factor and other parameter')
     
+    ###################################
+    # define the widgets:
+        
     alabel = tk.Label(window, text= "Conversion from tiff to LynceeTec binary")
     
     pz_label = tk.Label(window, text= "Please enter the pixel size in meter:")
@@ -477,6 +511,9 @@ def hconv_choice_tif2tif(master,wave):
     okbutton=tk.Button(window, text="Ok", width=16, height=1, command=lambda: ok())
     cancelbutton=tk.Button(window, text="Cancel", width=16, height=1, command=lambda: cancel())
     
+    ##################################
+    # positionning of the widgets
+    
     alabel.grid(row=0, column=0, padx=5, pady=5, sticky="nw")
     pz_label.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
     pz_entry.grid(row=1, column=1, padx=5, pady=5, sticky="nw")
@@ -494,6 +531,8 @@ def hconv_choice_tif2tif(master,wave):
     okbutton.grid(row=9, column=0, padx=5, pady=5, sticky="nw")
     cancelbutton.grid(row=9, column=1, padx=5, pady=5, sticky="nw")
     
+    ##################################
+    # some tkinter window configuration:
     window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
     window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
     window.grab_set()

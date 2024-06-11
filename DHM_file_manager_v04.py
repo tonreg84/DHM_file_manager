@@ -1,6 +1,7 @@
 """
 DHM file manager
-Autor: tonreg, team UMI, CNP-CHUV Lausanne
+Autor: Gernot Scheerer, team UMI, CNP-CHUV Lausanne
+gernot.scheerer@hotmail.de
  
 Version 04 - 27.05.2024
 
@@ -64,7 +65,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
 
-#some functions called by the buttons
+#functions called by the buttons
 def exitprog(root):
     root.destroy()
     

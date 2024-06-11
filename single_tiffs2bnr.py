@@ -1,8 +1,12 @@
 def tiffS2bnr(input_file,timestampsfile,wavelength,output_file, master):
-#this function converts a single tiff files into a tiff sequence
+# function for the program DHM file manager v04
+    
+#this function converts single-image tiff files into a LynceeTec bnr sequence
+#the input tiff files need to end with _00000_phase.tif, _00001_phase.tif, _00002_phase.tif, ..
 
 #input_file: filepath of one of the single tiff files, tiff file names: XXXXX_phase.tif
-#timestampsfile: int32 array from 3rd column of Koala timestamps file
+#timestampsfile: filepath of the corresponding Koala timestamps file, from there we will take the int32 array from 3rd column
+#wavelength of the DHM laser, float32
 #output_file -> the tiff files will be saved in the folder "output_file_tiff files"
 
     from os.path import basename, dirname

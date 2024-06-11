@@ -1,3 +1,12 @@
+"""
+function for the program DHM file manager v04
+
+is called if the input file is tiff format,
+to indicate if the input is a tiff stack file or a bunch of single-image tiff files
+
+opens a GUI
+"""
+
 def tiffs_or_tiffS(master):
     import tkinter as tk
     go_on=False
@@ -26,10 +35,16 @@ def tiffs_or_tiffS(master):
     
     a=None
     
+    ################################################################
+    # define the GUI window and it's layout
+    
     window = tk.Toplevel(master)
     window.geometry("210x130")
     window.title('-_-')
 
+    ###################################
+    # define the widgets:
+        
     label = tk.Label(window, text= 'You have chosen a tiff file as input.')
     label.pack()
     vstack=tk.BooleanVar()
@@ -43,11 +58,16 @@ def tiffs_or_tiffS(master):
     stackbutton = tk.Button(window, text='Cancel', width=5, height=1, command=cancel)
     stackbutton.pack(pady=5)
 
+    ##################################
+    # some tkinter window configuration:
+        
     window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
     window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
     window.grab_set()
     master.wait_window(window)
 
+    #output: 
+        
     if a==1:
         go_on=True
         tiff_type='.tif'

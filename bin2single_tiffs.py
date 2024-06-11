@@ -1,8 +1,12 @@
 def bin2tiffS(input_file,timestampsfile,wavelength,output_folder,master):
-#this function converts a tiff sequence into single-image tiff files
+# function for the program DHM file manager v04
+    
+#this function converts LynceeTec Koala bin files from one folder into single-image tiff files
+#the bin files need to end with _00000_phase.bin, _00001_phase.bin, _00002_phase.bin, ..
 
 #input_file: filepath of one of the bin files
-#timestampsfile: int32 array from 3rd column of Koala timestamps file
+#timestampsfile: filepath of the corresponding Koala timestamps file, from there we will take the int32 array from 3rd column
+#wavelength of the DHM laser, float32
 #output_file -> the tiff files will be saved in the folder "output_file_tiff files"
 
     from os.path import dirname, isdir, basename

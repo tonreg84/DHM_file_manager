@@ -1,3 +1,15 @@
+"""
+module for the program DHM file manager v04
+
+the functions are called when pushing on of the "modify header" buttons in the main window
+
+modify_bin_header: allows to modify the header of all bin files of a choosen folder
+
+modify_bnr_header: allows to modify the header of a bnr file
+
+opens a GUI
+"""
+
 import tkinter as tk
 from tkinter import filedialog
 import binkoala
@@ -12,12 +24,32 @@ def is_float(string):
             return False
 
 def modify_bin_header(master):
+    #to modify the header of all bin files of a choosen folder
+    
+    
+    binfolder=filedialog.askdirectory(title="Select a folder with DHM bin files")
+    timestampsfile=filedialog.askopenfilename(title="Select a timestamps file")
+    
+    #get header
+    in_file=binfolder+'/00000_phase.bin'
+    (phase_map,file_header)=binkoala.read_mat_bin(in_file)
+    hv_in=str(file_header['version'][0])
+    end_in=str(file_header['endian'][0])
+    hz_in=str(file_header['head_size'][0])
+    w_in=str(file_header['width'][0])
+    h_in=str(file_header['height'][0])
+    pz_in=str(file_header['px_size'][0])
+    hconv_in=str(file_header['hconv'][0])
+    uc_in=str(file_header['unit_code'][0])
     
     def cancel():
         tk.messagebox.showinfo('No header modification!', 'No header modification!')
         window.destroy()
         
     def check_input():
+        # hecks the input fields of the window one by one,
+        # disables the input field and enables the start button, when everything is ok
+        
         w_out=Ewout.get()
         if w_out=='':
             w_out=w_in
@@ -83,6 +115,7 @@ def modify_bin_header(master):
                                                 start_button.config(state= "normal")
 
     def reset_input():
+        #resets the start button to disabled and the input fields to enabled
         Ewout.config(state= "normal")
         Ehout.config(state= "normal")
         Epout.config(state= "normal")
@@ -92,6 +125,7 @@ def modify_bin_header(master):
         start_button.config(state= "disabled")
         
     def start():
+        #when pushing the start button, starts the header modification
         w=int(Ewout.get())
         h=int(Ehout.get())
         pz=float(Epout.get())
@@ -111,6 +145,7 @@ def modify_bin_header(master):
             timestamps=numpy.array(timelist)
         nImages=len(timestamps) #sequence length
         
+        # modify the header of all bin files
         for k in range(nImages):
             
             file_path=binfolder+'/'+str(k).rjust(5, '0')+'_phase.bin'
@@ -121,24 +156,15 @@ def modify_bin_header(master):
 
         tk.messagebox.showinfo('-_-', 'Header mofification done.')
         window.destroy()
-        
-    binfolder=filedialog.askdirectory(title="Select a folder with DHM bin files")
-    timestampsfile=filedialog.askopenfilename(title="Select a timestamps file")
     
-    #get header
-    in_file=binfolder+'/00000_phase.bin'
-    (phase_map,file_header)=binkoala.read_mat_bin(in_file)
-    hv_in=str(file_header['version'][0])
-    end_in=str(file_header['endian'][0])
-    hz_in=str(file_header['head_size'][0])
-    w_in=str(file_header['width'][0])
-    h_in=str(file_header['height'][0])
-    pz_in=str(file_header['px_size'][0])
-    hconv_in=str(file_header['hconv'][0])
-    uc_in=str(file_header['unit_code'][0])
-    
+    ################################################################
+    # define the GUI window and it's layout
+
     window = tk.Toplevel(master)
     window.title('Bin-file header modification')
+    
+    ###################################
+    # define the widgets:
     
     #toplabel = tk.Label(window, text= "Which elements of the header do you want to change?")
     current = tk.Label(window, text= "Current header")
@@ -171,6 +197,9 @@ def modify_bin_header(master):
     start_button.config(state= "disabled")
     cancel_button = tk.Button(window, text='Cancel', command=cancel)
     
+    ##################################
+    # positionning of the widgets
+
     #toplabel.grid(row=0, column=1, padx=5, pady=5, sticky="nw")
     current.grid(row=1, column=1, padx=5, pady=5, sticky="nw")
     replace.grid(row=1, column=2, padx=5, pady=5, sticky="nw")
@@ -196,6 +225,9 @@ def modify_bin_header(master):
     start_button.grid(row=9, column=0, padx=5, pady=5, sticky="nw")
     cancel_button.grid(row=9, column=1, padx=5, pady=5, sticky="nw")
     
+    ##################################
+    # some tkinter window configuration:
+    
     window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
     window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
     window.grab_set()
@@ -209,12 +241,36 @@ def modify_bin_header(master):
 ############################################################################################################
 
 def modify_bnr_header(master):
+    # to modify the header of a bnr file
+    
+    bnrfile=filedialog.askopenfilename(title="Select a bnr file")
+
+    #get header from bnr file
+    fileID = open(bnrfile, 'rb')
+    nImages = numpy.fromfile(fileID, dtype="i4", count=1)
+    nImages = nImages[0]
+    w = numpy.fromfile(fileID, dtype="i4", count=1)
+    w_in=w[0]
+    h = numpy.fromfile(fileID, dtype="i4", count=1)
+    h_in=h[0]
+    pz = numpy.fromfile(fileID, dtype="f4", count=1)
+    pz_in=pz[0]
+    wavelength = numpy.fromfile(fileID, dtype="f4", count=1)
+    wave_in=wavelength[0]
+    n_1 = numpy.fromfile(fileID, dtype="f4", count=1)
+    n_1_in=n_1[0]
+    n_2 = numpy.fromfile(fileID, dtype="f4", count=1)
+    n_2_in=n_2[0]
+    fileID.close
     
     def cancel():
         tk.messagebox.showinfo('No header modification!', 'No header modification!')
         window.destroy()
         
     def check_input():
+    	# checks the input fields of the window one by one,
+     # disables the input field and enables the start button, when everything is ok
+     
         w_out=Ewout.get()
         if w_out=='':
             w_out=w_in
@@ -292,6 +348,7 @@ def modify_bnr_header(master):
                                                         start_button.config(state= "normal")
     
     def reset_input():
+        #resets the start button to disabled and the input fields to enabled
         Ewout.config(state= "normal")
         Ehout.config(state= "normal")
         Epout.config(state= "normal")
@@ -322,29 +379,15 @@ def modify_bnr_header(master):
         tk.messagebox.showinfo('-_-', 'Header mofification done.')
         window.destroy()
     
-    bnrfile=filedialog.askopenfilename(title="Select a bnr file")
-
-    #get header from bnr file
-    fileID = open(bnrfile, 'rb')
-    nImages = numpy.fromfile(fileID, dtype="i4", count=1)
-    nImages = nImages[0]
-    w = numpy.fromfile(fileID, dtype="i4", count=1)
-    w_in=w[0]
-    h = numpy.fromfile(fileID, dtype="i4", count=1)
-    h_in=h[0]
-    pz = numpy.fromfile(fileID, dtype="f4", count=1)
-    pz_in=pz[0]
-    wavelength = numpy.fromfile(fileID, dtype="f4", count=1)
-    wave_in=wavelength[0]
-    n_1 = numpy.fromfile(fileID, dtype="f4", count=1)
-    n_1_in=n_1[0]
-    n_2 = numpy.fromfile(fileID, dtype="f4", count=1)
-    n_2_in=n_2[0]
-    fileID.close
+    ################################################################
+    # define the GUI window and it's layout
     
     window = tk.Toplevel(master)
     window.title('Bin-file header modification')
     
+    ###################################
+    # define the widgets:
+        
     #toplabel = tk.Label(window, text= "Which elements of the header do you want to change?")
     current = tk.Label(window, text= "Current header")
     replace = tk.Label(window, text= "Replace with")
@@ -379,6 +422,9 @@ def modify_bnr_header(master):
     start_button.config(state= "disabled")
     cancel_button = tk.Button(window, text='Cancel', command=cancel)
     
+    ##################################
+    # positionning of the widgets
+    
     #toplabel.grid(row=0, column=1, padx=5, pady=5, sticky="nw")
     current.grid(row=1, column=1, padx=5, pady=5, sticky="nw")
     replace.grid(row=1, column=2, padx=5, pady=5, sticky="nw")
@@ -406,6 +452,9 @@ def modify_bnr_header(master):
     start_button.grid(row=9, column=0, padx=5, pady=5, sticky="nw")
     cancel_button.grid(row=9, column=1, padx=5, pady=5, sticky="nw")
     
+    ##################################
+    # some tkinter window configuration:
+        
     window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
     window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
     window.grab_set()

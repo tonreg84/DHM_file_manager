@@ -1,9 +1,11 @@
 def bin2tif(input_file,timestampsfile,wavelength,output_file,master):
-#this function converts LynceeTec Koala bin files from one folder into a tif sequence
+# function for the program DHM file manager v04
+    
+#this function converts LynceeTec Koala bin files from one folder into a tiff stack file
 #the bin files need to end with _00000_phase.bin, _00001_phase.bin, _00002_phase.bin, ..
 
 #input_file : select any of the bin files, you want to convert, it parent folder becomes "binfolder"
-#timestampsfile: int32 array from 3rd column of Koala timestamps file
+#timestampsfile: filepath of the corresponding Koala timestamps file, from there we will take the int32 array from 3rd column
 #wavelength of the DHM laser, float32
 #output_file: destination of the tif sequence file
 
