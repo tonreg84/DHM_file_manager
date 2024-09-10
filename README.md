@@ -6,7 +6,7 @@ Version 04 - 27.05.2024
 This program is used to post-process data recorded during one experience with a LynceeTec DHM.
 
 This program does:
-a) open "bin" and "bnr" image files written by LynceeTec Koala or LynceeTec Possum, aw well as TIFF files, and shows the header information for "bin" and "bnr" files.
+a) open "bin" and "bnr" image files written by LynceeTec Koala or LynceeTec Possum, as well as TIFF files, and shows the header information for "bin" and "bnr" files.
 
 b) convert files between "LynceeTec" formats
    - Supported input file formats:
