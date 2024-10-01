@@ -44,7 +44,7 @@ def bnr2tif(input_file,timestampsfile,wavelength,output_file,master):
         
         timestamps = [0] * nImages
         for k in range(0,nImages):
-            timestamps[k] = fromfile(fileID, dtype="i4", count=1)
+            timestamps[k] = fromfile(fileID, dtype="f4", count=1)
 
         #Progress bar
         # Function to update the progress bar 
