@@ -63,7 +63,7 @@ def bnr2bin(input_file,timestampsfile,wavelength,output_folder,master):
                
             hconv=single(wavelength*10**-9/(6.283185307179586*(n_2-n_1)))
             
-            #timestamps = numpy.fromfile(fileID, dtype="i4", count=nImages)
+            #timestamps = numpy.fromfile(fileID, dtype="f4", count=nImages)
             timestamps = [0] * nImages
             for k in range(0,nImages):
                 timestamps[k] = fromfile(fileID, dtype="i4", count=1)
