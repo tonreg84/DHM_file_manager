@@ -1,24 +1,24 @@
-def tif2bin(input_file,timestampsfile,wavelength,output_folder,master):
-# function for the program DHM file manager v04
-
-#this function converts a tiff stack (data from LynceeTec Koala) into single-image bin files (LynceeTec format)
-
-#input_file: filepath of the tiff sequence
-#timestampsfile: filepath of the corresponding Koala timestamps file, from there we will take the int32 array from 3rd column
-#wavelength of the DHM laser, float32
-#output_file -> the bin files will be saved in the folder "output_file_Bin files"
+def tif2bin(input_file,wavelength,output_folder,master):
+    '''
+    function for the program DHM file manager v04
+    
+    this function converts a tiff stack (data from LynceeTec Koala) into single-image bin files (LynceeTec format)
+    
+    input_file: filepath of the tiff sequence
+    wavelength of the DHM laser, float32
+    output_file -> the bin files will be saved in the folder "output_file_Bin files"
+    '''
 
     import binkoala
-    from os.path import isdir, basename
+    from os.path import isdir
     from os import mkdir
     from tifffile import imread
-    
-    from numpy import single, array
-    from tkinter import messagebox, ttk, Toplevel, DoubleVar
+    from tkinter import messagebox, ttk, Toplevel, DoubleVar, Button
     import threading
     from hconv_choice import hconv_choice_tif2binary
         
     def onlyname(file_path):
+        from os.path import basename
         basenam=basename(file_path)
         alist=basenam.split('.')
         namebase=''
@@ -48,33 +48,38 @@ def tif2bin(input_file,timestampsfile,wavelength,output_folder,master):
         
         if do_it==True:
     
-            #read timestamps from timestampsfile
-            with open(timestampsfile, 'r') as infile:
-                
-                k=0
-                timelist=[]
-                for line in infile:
-                    # Split the line into a list of numbers
-                    numbers = line.split()
-                    time=single(float(numbers[3]))
-                    timelist.append(time)
-                    k=k+1          
-                timestamps=array(timelist)
-            
-            nImages=len(timestamps) #sequence length
-        
+            # Get sequence length
+            l = 0
+            while True:
+
+                try:
+                    imread(input_file, key=l)
+                    l+=1
+                except:
+                    nImages = l
+                    print("Seqeuence lenght:",nImages)
+                    break
+
             #get image width and height from first image of tiff stack
             phase_map = imread(input_file, key=0)
             
             w = len(phase_map[0,:])
             h = len(phase_map[:,0])
         
+            cancel = False
+            
             #Progress bar
             # Function to update the progress bar 
             def update_progress_bar():
+                nonlocal cancel
                 
                 #write the bin files
                 for k in range(nImages):
+                    
+                    if cancel:
+                        print(f"File conversion cancelled at frame {k}!")
+                        messagebox.showinfo('Cancelled', f"File conversion cancelled at frame {k}!")
+                        break
                 
                     #get image k from tiff stack                                     
                     if conversion_factor != 1.0:
@@ -90,7 +95,11 @@ def tif2bin(input_file,timestampsfile,wavelength,output_folder,master):
                     progress_var.set(k)  # Update progress bar value
                     
                 progress_window.destroy()  # Close the progress window when done
-    
+            
+            def stop_process():
+                nonlocal cancel
+                cancel = True
+                
             # Create a new window for the progress bar
             progress_window = Toplevel(master)
             progress_window.geometry("350x100")
@@ -101,10 +110,16 @@ def tif2bin(input_file,timestampsfile,wavelength,output_folder,master):
             progress_bar = ttk.Progressbar(progress_window, maximum=nImages, variable=progress_var)
             progress_bar.place(x=50, y=40, width=250) 
     
+            # Add a "Cancel" button to stop the process
+            cancel_button = Button(progress_window, text="Cancel", command=stop_process)
+            cancel_button.place(x=130, y=70)
+            
             # Run the update in a separate thread to avoid blocking the main thread
             threading.Thread(target=update_progress_bar).start()
             
-            progress_window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
+            # Allow closing the window by pressing the close button
+            progress_window.protocol("WM_DELETE_WINDOW", stop_process)
+            
             progress_window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
             progress_window.grab_set()
             master.wait_window(progress_window)

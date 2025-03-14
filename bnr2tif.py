@@ -1,16 +1,18 @@
-def bnr2tif(input_file,timestampsfile,wavelength,output_file,master):
-# function for the program DHM file manager v04
+def bnr2tif(input_file,wavelength,output_file,master):
+    '''
+    function for the program DHM file manager v04
+        
+    this function converts LynceeTec Possum bnr sequence into a tiff stack file
     
-#this function converts LynceeTec Possum bnr sequence into a tiff stack file
-
-#input_file: filepath of the bnr sequence
-#timestampsfile: filepath of the corresponding Koala timestamps file, from there we will take the int32 array from 3rd column
-#wavelength of the DHM laser, float32
-#output_file: destination file of the tiff stack
+    input_file: filepath of the bnr sequence
+    
+    wavelength of the DHM laser, float32
+    output_file: destination file of the tiff stack
+    '''
 
     from numpy import fromfile, single, zeros
     from tifffile import imsave
-    from tkinter import ttk, Toplevel, DoubleVar
+    from tkinter import ttk, Toplevel, DoubleVar, messagebox, Button
     import threading
     from hconv_choice import hconv_choice_binary2X
     
@@ -41,19 +43,22 @@ def bnr2tif(input_file,timestampsfile,wavelength,output_file,master):
         wavelength = fromfile(fileID, dtype="f4", count=1)
         n_1 = fromfile(fileID, dtype="f4", count=1)
         n_2 = fromfile(fileID, dtype="f4", count=1)
-        
-        timestamps = [0] * nImages
-        for k in range(0,nImages):
-            timestamps[k] = fromfile(fileID, dtype="f4", count=1)
+
+        cancel = False
 
         #Progress bar
         # Function to update the progress bar 
         def update_progress_bar():
-            
+            nonlocal cancel
             phase_map = zeros((h,w))
             
             #write the bin files file
             for i in range(nImages):
+                
+                if cancel:
+                    print(f"File conversion cancelled at frame {i}!")
+                    messagebox.showinfo('Cancelled', f"File conversion cancelled at frame {i}!")
+                    break
             
                 #get image k from sequence
                 for k in range(h):
@@ -72,6 +77,10 @@ def bnr2tif(input_file,timestampsfile,wavelength,output_file,master):
             progress_window.destroy()  # Close the progress window when done
             fileID.close
 
+        def stop_process():
+            nonlocal cancel
+            cancel = True
+
         # Create a new window for the progress bar
         progress_window = Toplevel()
         progress_window.geometry("350x100")
@@ -82,10 +91,16 @@ def bnr2tif(input_file,timestampsfile,wavelength,output_file,master):
         progress_bar = ttk.Progressbar(progress_window, maximum=nImages, variable=progress_var)
         progress_bar.place(x=50, y=40, width=250) 
         
+        # Add a "Cancel" button to stop the process
+        cancel_button = Button(progress_window, text="Cancel", command=stop_process)
+        cancel_button.place(x=130, y=70)
+    
         # Run the update in a separate thread to avoid blocking the main thread
         threading.Thread(target=update_progress_bar).start()
         
-        progress_window.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable closing the window using the close button
+        # Allow closing the window by pressing the close button
+        progress_window.protocol("WM_DELETE_WINDOW", stop_process)
+        
         progress_window.geometry("+{}+{}".format(master.winfo_rootx() + 50, master.winfo_rooty() + 50))
         progress_window.grab_set()
         master.wait_window(progress_window)
