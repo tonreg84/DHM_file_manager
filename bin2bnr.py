@@ -60,13 +60,14 @@ def bin2bnr(input_file,timestampsfile,wavelength,output_file,master):
                         k=k+1
                     timestamps=numpy.array(timelist)
                 nImages=len(timestamps) #sequence length
-            
+                
+                # read bin file from here
                 (phase_map,in_file_header)=binkoala.read_mat_bin(input_file)
                 w=in_file_header['width'][0]
                 h=in_file_header['height'][0]
                 pz=in_file_header['px_size'][0]
                 
-                #write meta data to bnr file
+                # write meta data to bnr file
                 fileID=open(output_file,'w')
                 numpy.array(nImages, dtype=numpy.int32).tofile(fileID)
                 numpy.array(w, dtype=numpy.int32).tofile(fileID)

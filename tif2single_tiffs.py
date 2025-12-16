@@ -89,7 +89,7 @@ def tif2tiffS(input_file,wavelength,output_folder,master):
                     #write to tiff file #k
                     output_file_path=tifffolder+'/'+str(k).rjust(5, '0')+'_phase.tif'
                     
-                    imsave(output_file_path, phase_map, photometric='minisblack', compression=5, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
+                    imsave(output_file_path, phase_map, photometric='minisblack', compression=None, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
                     
                     progress_var.set(k)  # Update progress bar value
                     

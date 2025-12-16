@@ -69,7 +69,7 @@ def tiffS2tiff(input_file,wavelength,output_file,master):
                     phase_map = imread(infile, key=0)
                 
                 #write to tiff stack (append)
-                imsave(output_file, phase_map, photometric='minisblack', compression=5, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
+                imsave(output_file, phase_map, photometric='minisblack', compression=None, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
                 
                 progress_var.set(k)  # Update progress bar value
                 k+=1

@@ -23,7 +23,7 @@ def bin2tif(input_file,wavelength,output_file,master):
     
     #get conversion factor
     (conv_check, conversion_factor)=hconv_choice_binary2X(master,input_file)
-    print('Choice of conversion facot:',conv_check, conversion_factor)
+    print('Choice of conversion factor:',conv_check, conversion_factor)
 
     if conv_check == True:
     #choice of conversion factor -END
@@ -53,7 +53,7 @@ def bin2tif(input_file,wavelength,output_file,master):
                 if conversion_factor != 1.0:
                     phase_map=phase_map*conversion_factor
                 
-                imsave(output_file, phase_map, photometric='minisblack', compression=5, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
+                imsave(output_file, phase_map, photometric='minisblack', compression=None, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
         
                 progress_var.set(k)  # Update progress bar value
                 k+=1

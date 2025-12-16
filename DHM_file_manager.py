@@ -533,6 +533,7 @@ def start_file_conversion():
 #create main window
 root = tk.Tk()
 root.title("DHM file manager")
+root.iconbitmap("file.ico")
 
 info_button = tk.Button(root, text="Information", width=10, height=1, command=lambda: show_info())
 
