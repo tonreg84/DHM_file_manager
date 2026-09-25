@@ -3,7 +3,7 @@ DHM file manager
 Autor: Gernot Scheerer, team UMI, CNP-CHUV Lausanne
 gernot.scheerer@hotmail.de
  
-Version 04 - 27.05.2024
+Version 05 - update 16.12.2025
 
 This program is used to post-process data recorded during one experience with a LynceeTec DHM.
 
@@ -382,7 +382,6 @@ def start_file_conversion():
                     in_file_extension=tiff_type
             else: tiff_go_on = True
             if tiff_go_on == True:
-                
                 #now check if timestamps file is choosen
                 timego = False
                 if outform == '.bnr':

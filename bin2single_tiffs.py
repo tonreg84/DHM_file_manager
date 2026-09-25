@@ -13,7 +13,7 @@ def bin2tiffS(input_file,wavelength,output_folder,master):
     from os.path import dirname, isdir
     from os import mkdir, listdir
     import binkoala
-    from tifffile import imsave
+    from tifffile import imwrite
     from tkinter import ttk, Toplevel, DoubleVar, messagebox, Button
     import threading
     from hconv_choice import hconv_choice_binary2X
@@ -82,7 +82,7 @@ def bin2tiffS(input_file,wavelength,output_folder,master):
                     
                     #write to tiff file #k
                     outfile=tifffolder +'/'+ onlyname(file) + '.tif'
-                    imsave(outfile, phase_map, photometric='minisblack', compression=None, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
+                    imwrite(outfile,phase_map,compression='zstd',append=True,planarconfig='CONTIG')
                     
                     progress_var.set(k)  # Update progress bar value
                     k+=1

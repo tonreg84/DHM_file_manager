@@ -12,7 +12,7 @@ def tiffS2tiff(input_file,wavelength,output_file,master):
 
     from os.path import dirname
     from os import listdir
-    from tifffile import imread, imsave
+    from tifffile import imread, imwrite
     from tkinter import ttk, Toplevel, DoubleVar, messagebox, Button
     import threading
     from hconv_choice import hconv_choice_tif2tif
@@ -68,8 +68,7 @@ def tiffS2tiff(input_file,wavelength,output_file,master):
                 else:
                     phase_map = imread(infile, key=0)
                 
-                #write to tiff stack (append)
-                imsave(output_file, phase_map, photometric='minisblack', compression=None, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
+                imwrite(output_file,phase_map,compression='zstd',append=True,planarconfig='CONTIG')
                 
                 progress_var.set(k)  # Update progress bar value
                 k+=1

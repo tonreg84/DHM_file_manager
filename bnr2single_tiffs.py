@@ -12,7 +12,7 @@ def bnr2tiffS(input_file,wavelength,output_folder,master):
     from os.path import isdir, basename
     from os import mkdir
     from numpy import fromfile, single, zeros
-    from tifffile import imsave
+    from tifffile import imwrite
     from tkinter import messagebox, Button, ttk, Toplevel, DoubleVar
     import threading
     from hconv_choice import hconv_choice_binary2X
@@ -90,8 +90,7 @@ def bnr2tiffS(input_file,wavelength,output_folder,master):
                     
                     #write to tiff file #k
                     output_file_path=tifffolder+'/'+str(i).rjust(5, '0')+'_phase.tif'
-                    imsave(output_file_path, phase_map, photometric='minisblack', compression=None, append=True, bitspersample=32, planarconfig=1, subfiletype=3)
-                    
+                    imwrite(output_file_path,phase_map,compression='zstd',append=True,planarconfig='CONTIG')
                     progress_var.set(k)  # Update progress bar value
                     
                 progress_window.destroy()  # Close the progress window when done
